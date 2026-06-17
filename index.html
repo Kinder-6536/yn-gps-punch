@@ -302,11 +302,83 @@ function renderReviewCenterPage() {
 function renderMonthlyHoursPage() {
   document.getElementById('panelTitle').textContent = '本月時數';
   document.getElementById('content').innerHTML =
-    '<div class="placeholder">' +
-    '這裡之後可以選月份與員工，查詢出勤總時數與加班總分鐘。' +
+    '<div class="form">' +
+      '<label>月份</label>' +
+      '<input id="hoursMonth" class="input" type="month">' +
+
+      '<label>員工</label>' +
+      '<select id="hoursEmployee" class="input">' +
+        '<option value="">載入員工中...</option>' +
+      '</select>' +
+
+      '<button class="main-btn primary full-btn" onclick="queryMonthlyHours()">查詢時數</button>' +
+
+      '<div id="monthlyHoursResult" class="placeholder"></div>' +
     '</div>';
 
-  setStatus('下一步會接出勤報表統計。');
+  setStatus('正在載入員工清單...');
+
+  const now = new Date();
+  document.getElementById('hoursMonth').value =
+    now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  callApi('getEmployeeOptions', {}, function(result) {
+    if (!result.success) {
+      setStatus(result.message);
+      return;
+    }
+
+    const select = document.getElementById('hoursEmployee');
+
+    select.innerHTML = result.employees.map(function(employee) {
+      return '<option value="' + employee.employeeNo + '">' +
+        employee.name + '｜' + employee.employeeNo + '｜' + employee.department +
+      '</option>';
+    }).join('');
+
+    setStatus('請選擇月份與員工。');
+  });
+}
+
+  function queryMonthlyHours() {
+  const monthValue = document.getElementById('hoursMonth').value;
+  const employeeNo = document.getElementById('hoursEmployee').value;
+
+  if (!monthValue || !employeeNo) {
+    setStatus('請選擇月份與員工。');
+    return;
+  }
+
+  const month = monthValue.replace('-', '/');
+
+  setStatus('正在查詢本月時數...');
+
+  callApi('getMonthlyHoursSummary', {
+    month: month,
+    employeeNo: employeeNo
+  }, function(result) {
+    if (!result.success) {
+      document.getElementById('monthlyHoursResult').innerHTML = result.message;
+      setStatus('');
+      return;
+    }
+
+    const data = result.data;
+
+    document.getElementById('monthlyHoursResult').innerHTML =
+      '<div class="card">' +
+        '<div class="card-title">' + data.month + ' ' + data.name + '</div>' +
+        '<div class="card-line">員工編號：' + data.employeeNo + '</div>' +
+        '<div class="card-line">部門：' + data.department + '</div>' +
+        '<div class="card-line">出勤天數：' + data.workDays + ' 天</div>' +
+        '<div class="card-line">總出勤時數：' + data.totalHours + ' 小時</div>' +
+        '<div class="card-line">加班總分鐘：' + data.overtimeMinutes + ' 分鐘</div>' +
+        '<div class="card-line">加班換算：' + data.overtimeText + '</div>' +
+        '<div class="card-line">異常天數：' + data.abnormalDays + ' 天</div>' +
+      '</div>';
+
+    setStatus(result.message);
+  });
 }
     
     function renderPlaceholder(title, text) {
