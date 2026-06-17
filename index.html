@@ -30,6 +30,13 @@
     .input { width:100%; box-sizing:border-box; border:1px solid #d0d5dd; border-radius:10px; padding:11px; font-size:16px; background:#fff; }
     .textarea { min-height:80px; resize:vertical; }
     .full-btn { width:100%; margin-top:10px; }
+    .card { border:1px solid #e5e7eb; border-radius:14px; padding:12px; margin-bottom:12px; background:#fff; }
+.card-title { font-weight:800; font-size:17px; margin-bottom:6px; }
+.card-line { font-size:14px; color:#344054; line-height:1.6; }
+.action-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.approve-btn { background:#06c755; }
+.reject-btn { background:#d92d20; }
+.small-btn { border:0; border-radius:10px; padding:10px; color:#fff; font-size:15px; font-weight:800; }
   </style>
 </head>
 <body>
@@ -179,6 +186,7 @@ setStatus('已取得 LINE 資料，請選擇功能。');
   if (page === 'punch') return renderPunchPage();
   if (page === 'leave') return renderLeavePage();
   if (page === 'makeup') return renderMakeupPage();
+  if (page === 'leaveReview') return renderLeaveReviewPage();
 
   const titles = {
     todayStatus: '今日狀態',
@@ -383,6 +391,90 @@ function renderMakeupPage() {
   document.body.appendChild(script);
 
   setStatus('正在送出請假申請...');
+}
+
+function renderLeaveReviewPage() {
+  document.getElementById('panelTitle').textContent = '請假審核';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取待審核請假單...</div>';
+  setStatus('');
+
+  callApi('getPendingLeaves', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('請假審核', result.message);
+      return;
+    }
+
+    if (!result.records || result.records.length === 0) {
+      renderPlaceholder('請假審核', '目前沒有待審核請假單。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = result.records.map(function(item) {
+      return '<div class="card">' +
+        '<div class="card-title">' + item.name + '｜' + item.leaveType + '</div>' +
+        '<div class="card-line">申請編號：' + item.requestId + '</div>' +
+        '<div class="card-line">部門：' + item.department + '</div>' +
+        '<div class="card-line">時間：' + item.startDate + ' ' + item.startTime + ' ~ ' + item.endDate + ' ' + item.endTime + '</div>' +
+        '<div class="card-line">時數：' + item.leaveHours + ' 小時</div>' +
+        '<div class="card-line">事由：' + item.reason + '</div>' +
+        '<div class="action-row">' +
+          '<button class="small-btn approve-btn" onclick="reviewLeave(\'' + item.requestId + '\', \'approve\')">核准</button>' +
+          '<button class="small-btn reject-btn" onclick="reviewLeave(\'' + item.requestId + '\', \'reject\')">退回</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    setStatus(result.message);
+  });
+}
+
+function reviewLeave(requestId, decision) {
+  const note = prompt(decision === 'approve' ? '請輸入核准備註，可留空' : '請輸入退回原因');
+
+  if (decision === 'reject' && !note) {
+    setStatus('退回請填寫原因。');
+    return;
+  }
+
+  callApi('reviewLeave', {
+    requestId: requestId,
+    decision: decision,
+    note: note || ''
+  }, function(result) {
+    setStatus(result.message);
+
+    if (result.success) {
+      renderLeaveReviewPage();
+    }
+  });
+}
+
+function callApi(apiName, extraParams, callback) {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    delete window[callbackName];
+    callback(result);
+  };
+
+  const params = new URLSearchParams(Object.assign({
+    api: apiName,
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken
+  }, extraParams || {}));
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('連線 Apps Script 失敗。');
+  };
+  document.body.appendChild(script);
 }
 
     
