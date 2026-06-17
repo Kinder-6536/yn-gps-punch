@@ -58,15 +58,27 @@
     let currentMode = 'employee';
 
     const menus = {
-      employee: [
-        ['punch', '我要打卡'], ['status', '今日狀態'], ['leave', '請假申請'], ['makeup', '補卡申請'],
-        ['outside', '外出申請'], ['report', '出勤紀錄'], ['overtime', '加班統計'], ['more', '更多功能']
-      ],
-      admin: [
-        ['abnormal', '今日異常'], ['daily', '出勤日報'], ['monthly', '月統計'], ['leaveReview', '請假審核'],
-        ['makeupReview', '補卡審核'], ['outsideReview', '外出審核'], ['employees', '員工資料'], ['settings', '系統設定']
-      ]
-    };
+  employee: [
+    ['punch', '我要打卡'],
+    ['todayStatus', '今日狀態'],
+    ['leave', '請假申請'],
+    ['makeup', '補卡申請'],
+    ['myAbnormal', '異常出勤'],
+    ['records', '出勤紀錄'],
+    ['overtime', '加班統計'],
+    ['more', '更多功能']
+  ],
+  admin: [
+    ['recentAbnormal', '近期異常'],
+    ['realtime', '即時出勤'],
+    ['abnormalSearch', '異常查詢'],
+    ['leaveReview', '請假審核'],
+    ['makeupReview', '補卡審核'],
+    ['reportGenerate', '報表產生'],
+    ['employees', '員工資料'],
+    ['settings', '系統設定']
+  ]
+};
 
     window.onerror = function(message, source, lineno) {
       setStatus('前端錯誤：' + message + '\n行數：' + lineno);
@@ -157,17 +169,46 @@ setStatus('已取得 LINE 資料，請選擇功能。');
     }
 
     function showPage(page) {
-      if (page === 'punch') return renderPunchPage();
+  if (page === 'punch') return renderPunchPage();
+  if (page === 'leave') return renderLeavePage();
+  if (page === 'makeup') return renderMakeupPage();
 
-      const titles = {
-        status:'今日狀態', leave:'請假申請', makeup:'補卡申請', outside:'外出申請',
-        report:'出勤紀錄', overtime:'加班統計', more:'更多功能',
-        abnormal:'今日異常', daily:'出勤日報', monthly:'月統計', leaveReview:'請假審核',
-        makeupReview:'補卡審核', outsideReview:'外出審核', employees:'員工資料', settings:'系統設定'
-      };
+  const titles = {
+    todayStatus: '今日狀態',
+    myAbnormal: '異常出勤',
+    records: '出勤紀錄',
+    overtime: '加班統計',
+    more: '更多功能',
 
-      renderPlaceholder(titles[page] || '功能', '這個功能頁已建立，下一步可以接 Google Sheet 資料與送出表單。');
-    }
+    recentAbnormal: '近期異常',
+    realtime: '即時出勤',
+    abnormalSearch: '異常查詢',
+    leaveReview: '請假審核',
+    makeupReview: '補卡審核',
+    reportGenerate: '報表產生',
+    employees: '員工資料',
+    settings: '系統設定'
+  };
+
+  const descriptions = {
+    todayStatus: '這裡之後會顯示今天上班、下班、外出、返回的打卡時間。',
+    myAbnormal: '這裡之後會顯示你的本月異常出勤紀錄。',
+    records: '這裡之後會顯示最近 10 筆打卡紀錄。',
+    overtime: '這裡之後會顯示本月加班分鐘與加班時數。',
+    more: '更多功能可以先保留，之後放薪資查詢、假別餘額或公告。',
+
+    recentAbnormal: '這裡之後會顯示最近 3 天的異常出勤。',
+    realtime: '這裡之後會顯示今天誰已上班、誰尚未上班、誰尚未下班。',
+    abnormalSearch: '這裡之後可以選日期區間查詢異常出勤報表。',
+    leaveReview: '這裡之後會顯示待審核請假申請。',
+    makeupReview: '這裡之後會顯示待審核補卡申請。',
+    reportGenerate: '這裡之後可以選月份或日期區間產生出勤報表。',
+    employees: '這裡之後會顯示員工名單與在職狀態。',
+    settings: '這裡之後可以管理管理員、打卡地點、行事曆設定。'
+  };
+
+  renderPlaceholder(titles[page] || '功能', descriptions[page] || '這個功能頁已建立。');
+}
 
     function renderPunchPage() {
       document.getElementById('panelTitle').textContent = '我要打卡';
@@ -181,6 +222,28 @@ setStatus('已取得 LINE 資料，請選擇功能。');
       bindPunchButtons();
     }
 
+      function renderLeavePage() {
+      document.getElementById('panelTitle').textContent = '請假申請';
+      document.getElementById('content').innerHTML =
+      '<div class="placeholder">' +
+      '請假申請表單會放在這裡。<br>' +
+      '欄位會包含：假別、開始日期、開始時間、結束日期、結束時間、請假時數、事由。' +
+      '</div>';
+      setStatus('下一步會把這裡接到「請假申請」工作表。');
+    }
+
+function renderMakeupPage() {
+  document.getElementById('panelTitle').textContent = '補卡申請';
+  document.getElementById('content').innerHTML =
+    '<div class="placeholder">' +
+    '補卡申請表單會放在這裡。<br>' +
+    '之後需要新增「補卡申請」工作表，審核通過後才補進打卡紀錄。' +
+    '</div>';
+  setStatus('下一步會建立補卡申請流程。');
+}
+
+
+    
     function renderPlaceholder(title, text) {
       document.getElementById('panelTitle').textContent = title;
       document.getElementById('content').innerHTML = '<div class="placeholder">' + text + '</div>';
