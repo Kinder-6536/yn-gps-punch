@@ -81,15 +81,15 @@
     ['more', '更多功能']
   ],
   admin: [
-    ['recentAbnormal', '近期異常'],
-    ['realtime', '即時出勤'],
-    ['abnormalSearch', '異常查詢'],
-    ['leaveReview', '請假審核'],
-    ['makeupReview', '補卡審核'],
-    ['reportGenerate', '報表產生'],
-    ['employees', '員工資料'],
-    ['settings', '系統設定']
-  ]
+  ['recentAbnormal', '近期異常'],
+  ['realtime', '即時出勤'],
+  ['abnormalSearch', '異常查詢'],
+  ['reviewCenter', '審核系統'],
+  ['monthlyHours', '本月時數'],
+  ['reportGenerate', '報表產生'],
+  ['employees', '員工資料'],
+  ['settings', '系統設定']
+]
 };
 
     window.onerror = function(message, source, lineno) {
@@ -187,7 +187,10 @@ setStatus('已取得 LINE 資料，請選擇功能。');
   if (page === 'leave') return renderLeavePage();
   if (page === 'makeup') return renderMakeupPage();
   if (page === 'leaveReview') return renderLeaveReviewPage();
+  if (page === 'reviewCenter') return renderReviewCenterPage();
+  if (page === 'monthlyHours') return renderMonthlyHoursPage();
 
+      
   const titles = {
     todayStatus: '今日狀態',
     myAbnormal: '異常出勤',
@@ -285,7 +288,26 @@ function renderMakeupPage() {
   setStatus('下一步會建立補卡申請流程。');
 }
 
+function renderReviewCenterPage() {
+  document.getElementById('panelTitle').textContent = '審核系統';
+  document.getElementById('content').innerHTML =
+    '<div class="grid">' +
+      '<button class="main-btn primary" onclick="renderLeaveReviewPage()">請假審核</button>' +
+      '<button class="main-btn" onclick="renderPlaceholder(\'補卡審核\', \'補卡審核功能下一步製作。\')">補卡審核</button>' +
+    '</div>';
 
+  setStatus('請選擇要審核的申請類型。');
+}
+
+function renderMonthlyHoursPage() {
+  document.getElementById('panelTitle').textContent = '本月時數';
+  document.getElementById('content').innerHTML =
+    '<div class="placeholder">' +
+    '這裡之後可以選月份與員工，查詢出勤總時數與加班總分鐘。' +
+    '</div>';
+
+  setStatus('下一步會接出勤報表統計。');
+}
     
     function renderPlaceholder(title, text) {
       document.getElementById('panelTitle').textContent = title;
