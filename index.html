@@ -25,6 +25,11 @@
     .nav-item { border:0; background:transparent; color:#344054; padding:8px 2px; border-radius:10px; font-size:12px; font-weight:800; min-height:50px; }
     .nav-item.active { background:#e9f8ef; color:#087a3b; }
     button:disabled { background:#aaa; color:#fff; }
+     .form { display:grid; gap:8px; }
+    .form label { font-size:14px; font-weight:800; color:#344054; margin-top:4px; }
+    .input { width:100%; box-sizing:border-box; border:1px solid #d0d5dd; border-radius:10px; padding:11px; font-size:16px; background:#fff; }
+    .textarea { min-height:80px; resize:vertical; }
+    .full-btn { width:100%; margin-top:10px; }
   </style>
 </head>
 <body>
@@ -223,14 +228,43 @@ setStatus('已取得 LINE 資料，請選擇功能。');
     }
 
       function renderLeavePage() {
-      document.getElementById('panelTitle').textContent = '請假申請';
-      document.getElementById('content').innerHTML =
-      '<div class="placeholder">' +
-      '請假申請表單會放在這裡。<br>' +
-      '欄位會包含：假別、開始日期、開始時間、結束日期、結束時間、請假時數、事由。' +
-      '</div>';
-      setStatus('下一步會把這裡接到「請假申請」工作表。');
-    }
+  document.getElementById('panelTitle').textContent = '請假申請';
+  document.getElementById('content').innerHTML =
+    '<div class="form">' +
+      '<label>假別</label>' +
+      '<select id="leaveType" class="input">' +
+        '<option value="特休">特休</option>' +
+        '<option value="病假">病假</option>' +
+        '<option value="事假">事假</option>' +
+        '<option value="公假">公假</option>' +
+        '<option value="喪假">喪假</option>' +
+        '<option value="婚假">婚假</option>' +
+        '<option value="產假">產假</option>' +
+      '</select>' +
+
+      '<label>開始日期</label>' +
+      '<input id="leaveStartDate" class="input" type="date">' +
+
+      '<label>開始時間</label>' +
+      '<input id="leaveStartTime" class="input" type="time">' +
+
+      '<label>結束日期</label>' +
+      '<input id="leaveEndDate" class="input" type="date">' +
+
+      '<label>結束時間</label>' +
+      '<input id="leaveEndTime" class="input" type="time">' +
+
+      '<label>請假時數</label>' +
+      '<input id="leaveHours" class="input" type="number" step="0.5" min="0.5" placeholder="例如 8">' +
+
+      '<label>事由</label>' +
+      '<textarea id="leaveReason" class="input textarea" placeholder="請輸入請假事由"></textarea>' +
+
+      '<button class="main-btn primary full-btn" onclick="submitLeave()">送出請假申請</button>' +
+    '</div>';
+
+  setStatus('請填寫請假資料。');
+}
 
 function renderMakeupPage() {
   document.getElementById('panelTitle').textContent = '補卡申請';
@@ -302,6 +336,57 @@ function renderMakeupPage() {
       document.body.appendChild(script);
     }
 
+    function submitLeave() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const leaveType = document.getElementById('leaveType').value;
+  const startDate = document.getElementById('leaveStartDate').value;
+  const startTime = document.getElementById('leaveStartTime').value;
+  const endDate = document.getElementById('leaveEndDate').value;
+  const endTime = document.getElementById('leaveEndTime').value;
+  const leaveHours = document.getElementById('leaveHours').value;
+  const reason = document.getElementById('leaveReason').value.trim();
+
+  if (!startDate || !startTime || !endDate || !endTime || !leaveHours || !reason) {
+    setStatus('請完整填寫請假資料。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    setStatus(result.message);
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'submitLeave',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    leaveType: leaveType,
+    startDate: startDate,
+    startTime: startTime,
+    endDate: endDate,
+    endTime: endTime,
+    leaveHours: leaveHours,
+    reason: reason
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('送出失敗：無法連線到 Apps Script。');
+  };
+  document.body.appendChild(script);
+
+  setStatus('正在送出請假申請...');
+}
+
+    
     function setButtonsDisabled(disabled) {
       document.querySelectorAll('.punch-btn').forEach(function(button) { button.disabled = disabled; });
     }
