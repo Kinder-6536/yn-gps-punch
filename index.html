@@ -4,138 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <title>YN GPS 打卡</title>
+  <title>YN 打卡系統</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, "Microsoft JhengHei", sans-serif;
-      background: #f5f7fb;
-      color: #202124;
-      padding-bottom: 106px;
-    }
-
-    .wrap {
-      max-width: 430px;
-      margin: 0 auto;
-      padding: 22px 18px;
-    }
-
-    .title {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-
-    .date {
-      font-size: 18px;
-      margin-bottom: 14px;
-    }
-
-    .time {
-      font-size: 52px;
-      font-weight: 800;
-      text-align: center;
-      margin: 18px 0 24px;
-    }
-
-    .panel {
-      background: #fff;
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.08);
-      min-height: 230px;
-    }
-
-    .panel-title {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 14px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 16px;
-      font-size: 20px;
-      font-weight: 800;
-      color: white;
-      background: #3273dc;
-    }
-
-    button.primary {
-      background: #06c755;
-    }
-
-    button:disabled {
-      background: #aaa;
-    }
-
-    .status {
-      margin-top: 16px;
-      white-space: pre-line;
-      line-height: 1.55;
-      font-size: 15px;
-    }
-
-    .bottom-nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: #fff;
-      border-top: 1px solid #e5e7eb;
-      box-shadow: 0 -6px 20px rgba(0,0,0,.08);
-      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      max-width: 430px;
-      margin: 0 auto;
-    }
-
-    .nav-item {
-      border: 0;
-      background: transparent;
-      color: #344054;
-      padding: 8px 2px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-items: center;
-      justify-content: center;
-      min-height: 48px;
-    }
-
-    .nav-item.active {
-      background: #e9f8ef;
-      color: #087a3b;
-    }
-
-    .nav-icon {
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    .placeholder {
-      color: #667085;
-      line-height: 1.7;
-      font-size: 15px;
-    }
+    body { margin:0; font-family:Arial,"Microsoft JhengHei",sans-serif; background:#f5f7fb; color:#202124; padding-bottom:108px; }
+    .wrap { max-width:430px; margin:0 auto; padding:22px 18px; }
+    .title { font-size:28px; font-weight:800; margin-bottom:10px; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 16px; }
+    .tab { background:#fff; color:#344054; border:1px solid #d0d5dd; border-radius:12px; padding:10px; font-size:16px; font-weight:800; }
+    .tab.active { background:#06c755; color:#fff; border-color:#06c755; }
+    .date { font-size:17px; }
+    .time { font-size:48px; font-weight:800; text-align:center; margin:16px 0 22px; }
+    .panel { background:#fff; border-radius:18px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); min-height:250px; }
+    .panel-title { font-size:21px; font-weight:800; margin-bottom:14px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .main-btn { border:0; border-radius:12px; padding:16px; font-size:20px; font-weight:800; color:white; background:#3273dc; }
+    .main-btn.primary { background:#06c755; }
+    .status { margin-top:16px; white-space:pre-line; line-height:1.55; font-size:15px; color:#344054; }
+    .placeholder { color:#667085; line-height:1.7; font-size:15px; }
+    .bottom-nav { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid #e5e7eb; box-shadow:0 -6px 20px rgba(0,0,0,.08); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(4,1fr); gap:6px; max-width:430px; margin:0 auto; }
+    .nav-item { border:0; background:transparent; color:#344054; padding:8px 2px; border-radius:10px; font-size:12px; font-weight:800; min-height:50px; }
+    .nav-item.active { background:#e9f8ef; color:#087a3b; }
+    button:disabled { background:#aaa; color:#fff; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="title">YN GPS 打卡</div>
+    <div class="title">YN 打卡系統</div>
+
+    <div class="tabs">
+      <button class="tab active" id="employeeTab" onclick="switchMode('employee')">員工</button>
+      <button class="tab" id="adminTab" onclick="switchMode('admin')">管理員</button>
+    </div>
+
     <div class="date" id="dateText"></div>
     <div class="time" id="timeText">--:--</div>
 
@@ -146,79 +46,58 @@
     </div>
   </div>
 
-  <div class="bottom-nav">
-    <button class="nav-item active" data-page="punch"><span class="nav-icon">◎</span>我要打卡</button>
-    <button class="nav-item" data-page="status"><span class="nav-icon">□</span>今日狀態</button>
-    <button class="nav-item" data-page="leave"><span class="nav-icon">＋</span>請假申請</button>
-    <button class="nav-item" data-page="makeup"><span class="nav-icon">△</span>補卡申請</button>
-    <button class="nav-item" data-page="outside"><span class="nav-icon">◇</span>外出申請</button>
-    <button class="nav-item" data-page="report"><span class="nav-icon">≡</span>出勤紀錄</button>
-    <button class="nav-item" data-page="overtime"><span class="nav-icon">○</span>加班統計</button>
-    <button class="nav-item" data-page="admin"><span class="nav-icon">☆</span>管理功能</button>
-  </div>
+  <div class="bottom-nav" id="bottomNav"></div>
 
   <script>
-    window.onerror = function(message, source, lineno) {
-      setStatus('前端錯誤：' + message + '\n行數：' + lineno);
-    };
-
-    window.onunhandledrejection = function(event) {
-      setStatus('前端錯誤：' + (event.reason && event.reason.message ? event.reason.message : event.reason));
-    };
-
     const LIFF_ID = '2010401445-uCijQZfw';
-    const APPS_SCRIPT_URL = 'https://script.google.com/u/0/home/projects/1lh82-MxBEPmk2xvkRLIvkKVxwRjvc9s35-RT8nnTGgfv0sdf9YBF6Dss/edit';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-bmhtzpcUPtetf7KbnPZDnehn-TLbvogza9V_a6WZoye1WoPe_okWAFpwzRf_ruxa/exec';
 
     let accessToken = '';
     let idToken = '';
     let ready = false;
+    let currentMode = 'employee';
+
+    const menus = {
+      employee: [
+        ['punch', '我要打卡'], ['status', '今日狀態'], ['leave', '請假申請'], ['makeup', '補卡申請'],
+        ['outside', '外出申請'], ['report', '出勤紀錄'], ['overtime', '加班統計'], ['more', '更多功能']
+      ],
+      admin: [
+        ['abnormal', '今日異常'], ['daily', '出勤日報'], ['monthly', '月統計'], ['leaveReview', '請假審核'],
+        ['makeupReview', '補卡審核'], ['outsideReview', '外出審核'], ['employees', '員工資料'], ['settings', '系統設定']
+      ]
+    };
+
+    window.onerror = function(message, source, lineno) {
+      setStatus('前端錯誤：' + message + '\n行數：' + lineno);
+    };
 
     function updateClock() {
       const now = new Date();
-
-      document.getElementById('dateText').textContent = now.toLocaleDateString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        weekday: 'long'
-      });
-
-      document.getElementById('timeText').textContent = now.toLocaleTimeString('zh-TW', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+      document.getElementById('dateText').textContent = now.toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', weekday:'long' });
+      document.getElementById('timeText').textContent = now.toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit', hour12:false });
     }
 
     async function init() {
       try {
+        renderMenu();
         renderPunchPage();
-        setStatus('版本：0617-app-menu\n正在初始化 LINE 登入...');
+        setStatus('版本：0617-line-app\n正在初始化 LINE 登入...');
 
-        const initPromise = liff.init({ liffId: LIFF_ID });
-
-        const timeoutPromise = new Promise(function(resolve, reject) {
-          setTimeout(function() {
-            reject(new Error('LIFF 初始化逾時，請關閉此頁後重新從 LINE 開啟。'));
-          }, 15000);
-        });
-
-        await Promise.race([initPromise, timeoutPromise]);
+        await Promise.race([
+          liff.init({ liffId: LIFF_ID }),
+          new Promise(function(resolve, reject) {
+            setTimeout(function() { reject(new Error('LIFF 初始化逾時，請關閉後重新從 LINE 開啟。')); }, 15000);
+          })
+        ]);
 
         if (!liff.isLoggedIn()) {
-          setStatus('正在開啟 LINE 登入...');
           liff.login({ redirectUri: window.location.href });
           return;
         }
 
         accessToken = liff.getAccessToken() || '';
         idToken = liff.getIDToken() || '';
-
-        if (!accessToken && !idToken) {
-          setStatus('無法取得 LINE 登入資料，請重新從 LINE 開啟打卡頁。');
-          return;
-        }
-
         ready = true;
         setStatus('已取得 LINE 資料，請選擇功能。');
 
@@ -227,13 +106,23 @@
       }
     }
 
-    function bindBottomNav() {
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById('employeeTab').classList.toggle('active', mode === 'employee');
+      document.getElementById('adminTab').classList.toggle('active', mode === 'admin');
+      renderMenu();
+      showPage(menus[mode][0][0]);
+    }
+
+    function renderMenu() {
+      const nav = document.getElementById('bottomNav');
+      nav.innerHTML = menus[currentMode].map(function(item, index) {
+        return '<button class="nav-item ' + (index === 0 ? 'active' : '') + '" data-page="' + item[0] + '">' + item[1] + '</button>';
+      }).join('');
+
       document.querySelectorAll('.nav-item').forEach(function(button) {
         button.addEventListener('click', function() {
-          document.querySelectorAll('.nav-item').forEach(function(item) {
-            item.classList.remove('active');
-          });
-
+          document.querySelectorAll('.nav-item').forEach(function(item) { item.classList.remove('active'); });
           button.classList.add('active');
           showPage(button.dataset.page);
         });
@@ -241,33 +130,33 @@
     }
 
     function showPage(page) {
-      if (page === 'punch') renderPunchPage();
-      if (page === 'status') renderPlaceholder('今日狀態', '這裡之後會顯示今天的上班、下班、外出、返回紀錄。');
-      if (page === 'leave') renderPlaceholder('請假申請', '這裡之後會做成請假表單，送出後給主管審核。');
-      if (page === 'makeup') renderPlaceholder('補卡申請', '這裡之後會做成補卡表單，避免員工自己打錯格式。');
-      if (page === 'outside') renderPlaceholder('外出申請', '這裡之後會做成外出申請單，可由主管審核。');
-      if (page === 'report') renderPlaceholder('出勤紀錄', '這裡之後會查詢個人出勤紀錄與異常。');
-      if (page === 'overtime') renderPlaceholder('加班統計', '這裡之後會顯示本月加班總分鐘與總小時。');
-      if (page === 'admin') renderPlaceholder('管理功能', '這裡之後會放今日異常、產生日報、產生月報、請假審核。');
+      if (page === 'punch') return renderPunchPage();
+
+      const titles = {
+        status:'今日狀態', leave:'請假申請', makeup:'補卡申請', outside:'外出申請',
+        report:'出勤紀錄', overtime:'加班統計', more:'更多功能',
+        abnormal:'今日異常', daily:'出勤日報', monthly:'月統計', leaveReview:'請假審核',
+        makeupReview:'補卡審核', outsideReview:'外出審核', employees:'員工資料', settings:'系統設定'
+      };
+
+      renderPlaceholder(titles[page] || '功能', '這個功能頁已建立，下一步可以接 Google Sheet 資料與送出表單。');
     }
 
     function renderPunchPage() {
       document.getElementById('panelTitle').textContent = '我要打卡';
-      document.getElementById('content').innerHTML = `
-        <div>請選擇打卡動作</div>
-        <div class="grid">
-          <button class="punch-btn primary" data-action="上班">上班</button>
-          <button class="punch-btn" data-action="下班">下班</button>
-          <button class="punch-btn" data-action="外出">外出</button>
-          <button class="punch-btn" data-action="返回">返回</button>
-        </div>
-      `;
+      document.getElementById('content').innerHTML =
+        '<div>請選擇打卡動作</div><div class="grid">' +
+        '<button class="main-btn primary punch-btn" data-action="上班">上班</button>' +
+        '<button class="main-btn punch-btn" data-action="下班">下班</button>' +
+        '<button class="main-btn punch-btn" data-action="外出">外出</button>' +
+        '<button class="main-btn punch-btn" data-action="返回">返回</button>' +
+        '</div>';
       bindPunchButtons();
     }
 
     function renderPlaceholder(title, text) {
       document.getElementById('panelTitle').textContent = title;
-      document.getElementById('content').innerHTML = `<div class="placeholder">${text}</div>`;
+      document.getElementById('content').innerHTML = '<div class="placeholder">' + text + '</div>';
       setStatus('');
     }
 
@@ -280,32 +169,17 @@
     }
 
     function punch(punchAction) {
-      if (!ready) {
-        setStatus('LINE 尚未初始化完成，請稍候。');
-        return;
-      }
-
-      if (!punchAction) {
-        setStatus('系統錯誤：沒有取得打卡動作。');
-        return;
-      }
-
+      if (!ready) return setStatus('LINE 尚未初始化完成，請稍候。');
       setButtonsDisabled(true);
       setStatus('正在取得 GPS 位置...');
 
       navigator.geolocation.getCurrentPosition(
-        function(position) {
-          submitPunch(punchAction, position.coords);
-        },
+        function(position) { submitPunch(punchAction, position.coords); },
         function(error) {
           setButtonsDisabled(false);
           setStatus('定位失敗：請確認 LINE 已允許定位權限。\n' + error.message);
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 20000,
-          maximumAge: 0
-        }
+        { enableHighAccuracy:true, timeout:20000, maximumAge:0 }
       );
     }
 
@@ -319,38 +193,33 @@
       };
 
       const params = new URLSearchParams({
-        api: 'submitPunch',
-        callback: callbackName,
-        action: punchAction,
-        accessToken: accessToken,
-        idToken: idToken,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        accuracy: coords.accuracy
+        api:'submitPunch',
+        callback:callbackName,
+        action:punchAction,
+        accessToken:accessToken,
+        idToken:idToken,
+        latitude:coords.latitude,
+        longitude:coords.longitude,
+        accuracy:coords.accuracy
       });
 
       const script = document.createElement('script');
       script.src = APPS_SCRIPT_URL + '?' + params.toString();
-
       script.onerror = function() {
         setStatus('送出失敗：無法連線到 Apps Script。');
         setButtonsDisabled(false);
       };
-
       document.body.appendChild(script);
     }
 
     function setButtonsDisabled(disabled) {
-      document.querySelectorAll('button').forEach(function(button) {
-        button.disabled = disabled;
-      });
+      document.querySelectorAll('.punch-btn').forEach(function(button) { button.disabled = disabled; });
     }
 
     function setStatus(text) {
       document.getElementById('status').textContent = text;
     }
 
-    bindBottomNav();
     updateClock();
     setInterval(updateClock, 1000);
     init();
