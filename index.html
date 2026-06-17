@@ -104,12 +104,11 @@
         renderPunchPage();
         setStatus('版本：0617-leave-auto-hours\n正在初始化 LINE 登入...');
 
-        await Promise.race([
-          liff.init({ liffId: LIFF_ID }),
-          new Promise(function(resolve, reject) {
-            setTimeout(function() { reject(new Error('LIFF 初始化逾時，請關閉後重新從 LINE 開啟。')); }, 15000);
-          })
-        ]);
+setStatus('版本：0617-leave-auto-hours\n準備初始化 LIFF...');
+
+await liff.init({ liffId: LIFF_ID });
+
+setStatus('LIFF 初始化完成，正在確認登入...');
 
         if (!liff.isLoggedIn()) {
           liff.login({ redirectUri: window.location.href });
@@ -120,14 +119,14 @@
         idToken = liff.getIDToken() || '';
         ready = true;
 
-        const autoAction = getActionFromUrl();
+const autoAction = getActionFromUrl();
 
-        if (autoAction) {
-        setStatus('已取得 LINE 資料，正在自動打卡：' + autoAction);
-        setTimeout(function() {
-        punch(autoAction);
-        }, 500);
-    return;
+if (autoAction) {
+  setStatus('已取得 LINE 資料，正在自動打卡：' + autoAction);
+  setTimeout(function() {
+    punch(autoAction);
+  }, 500);
+  return;
 }
 
 setStatus('已取得 LINE 資料，請選擇功能。');
