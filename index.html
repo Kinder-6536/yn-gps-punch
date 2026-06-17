@@ -106,6 +106,26 @@
       }
     }
 
+    function getActionFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const action = params.get('action');
+
+        const actionMap = {
+        clockin: '上班',
+        clockout: '下班',
+        out: '外出',
+        back: '返回'
+    };
+
+  return actionMap[action] || '';
+}
+    const autoAction = getActionFromUrl();
+
+if (autoAction) {
+  punch(autoAction);
+}
+
+    
     function switchMode(mode) {
       currentMode = mode;
       document.getElementById('employeeTab').classList.toggle('active', mode === 'employee');
