@@ -99,7 +99,18 @@
         accessToken = liff.getAccessToken() || '';
         idToken = liff.getIDToken() || '';
         ready = true;
-        setStatus('已取得 LINE 資料，請選擇功能。');
+
+        const autoAction = getActionFromUrl();
+
+        if (autoAction) {
+        setStatus('已取得 LINE 資料，正在自動打卡：' + autoAction);
+        setTimeout(function() {
+        punch(autoAction);
+        }, 500);
+    return;
+}
+
+setStatus('已取得 LINE 資料，請選擇功能。');
 
       } catch (error) {
         setStatus('LIFF 初始化失敗：' + error.message);
@@ -119,11 +130,7 @@
 
   return actionMap[action] || '';
 }
-    const autoAction = getActionFromUrl();
 
-if (autoAction) {
-  punch(autoAction);
-}
 
     
     function switchMode(mode) {
