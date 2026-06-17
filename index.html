@@ -254,8 +254,7 @@ setStatus('已取得 LINE 資料，請選擇功能。');
       '<label>結束時間</label>' +
       '<input id="leaveEndTime" class="input" type="time">' +
 
-      '<label>請假時數</label>' +
-      '<input id="leaveHours" class="input" type="number" step="0.5" min="0.5" placeholder="例如 8">' +
+      <div class="placeholder">請假時數會由系統依日期與上班日自動計算。</div>
 
       '<label>事由</label>' +
       '<textarea id="leaveReason" class="input textarea" placeholder="請輸入請假事由"></textarea>' +
@@ -347,10 +346,9 @@ function renderMakeupPage() {
   const startTime = document.getElementById('leaveStartTime').value;
   const endDate = document.getElementById('leaveEndDate').value;
   const endTime = document.getElementById('leaveEndTime').value;
-  const leaveHours = document.getElementById('leaveHours').value;
   const reason = document.getElementById('leaveReason').value.trim();
 
-  if (!startDate || !startTime || !endDate || !endTime || !leaveHours || !reason) {
+  if (!startDate || !startTime || !endDate || !endTime || !reason) {
     setStatus('請完整填寫請假資料。');
     return;
   }
@@ -372,7 +370,6 @@ function renderMakeupPage() {
     startTime: startTime,
     endDate: endDate,
     endTime: endTime,
-    leaveHours: leaveHours,
     reason: reason
   });
 
