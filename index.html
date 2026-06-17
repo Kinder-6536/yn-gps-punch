@@ -88,7 +88,10 @@
     window.onerror = function(message, source, lineno) {
       setStatus('前端錯誤：' + message + '\n行數：' + lineno);
     };
-
+    window.onunhandledrejection = function(event) {
+      setStatus('前端錯誤：' + (event.reason && event.reason.message ? event.reason.message : event.reason));
+    };
+    
     function updateClock() {
       const now = new Date();
       document.getElementById('dateText').textContent = now.toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', weekday:'long' });
@@ -99,7 +102,7 @@
       try {
         renderMenu();
         renderPunchPage();
-        setStatus('版本：0617-line-app\n正在初始化 LINE 登入...');
+        setStatus('版本：0617-leave-auto-hours\n正在初始化 LINE 登入...');
 
         await Promise.race([
           liff.init({ liffId: LIFF_ID }),
