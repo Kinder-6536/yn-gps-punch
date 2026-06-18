@@ -37,6 +37,7 @@
 .approve-btn { background:#06c755; }
 .reject-btn { background:#d92d20; }
 .small-btn { border:0; border-radius:10px; padding:10px; color:#fff; font-size:15px; font-weight:800; }
+    .late-text { color:#d92d20; font-weight:900; }
   </style>
 </head>
 <body>
@@ -366,9 +367,11 @@ function renderMonthlyHoursPage() {
     const data = result.data;
 
 const dailyHtml = (data.dailyRecords || []).map(function(item) {
+  const lateClass = isLateClockIn(item.clockIn) ? ' late-text' : '';
+
   return '<div class="card-line">' +
     item.date +
-    '　上班 ' + item.clockIn +
+    '　上班 <span class="' + lateClass + '">' + item.clockIn + '</span>' +
     '　下班 ' + item.clockOut +
     '　時數 ' + item.hoursText +
   '</div>';
@@ -389,6 +392,17 @@ document.getElementById('monthlyHoursResult').innerHTML =
 
     setStatus(result.message);
   });
+}
+
+function isLateClockIn(timeText) {
+  if (!timeText || timeText === '未打卡') {
+    return false;
+  }
+
+  const parts = timeText.split(':');
+  const minutes = Number(parts[0]) * 60 + Number(parts[1]);
+
+  return minutes >= (8 * 60 + 11);
 }
     
     function renderPlaceholder(title, text) {
