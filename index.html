@@ -264,17 +264,20 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 
     function renderPunchPage() {
   document.getElementById('panelTitle').textContent = '我要打卡';
-  document.getElementById('content').innerHTML =
-    '<div>請選擇打卡動作</div>' +
-    '<div class="grid">' +
-      '<button class="main-btn primary punch-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
-      '<button class="main-btn punch-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
-    '</div>' +
-    '<div class="daily-quote">' +
-      '<div class="daily-quote-title">今日小語</div>' +
-      '<div id="dailyQuoteText">' + getDailyQuote() + '</div>' +
-    '</div>';
 
+  document.getElementById('content').innerHTML =
+  '<div id="punchIdentityArea"></div>' +
+  '<div>請選擇打卡動作</div>' +
+  '<div class="grid">' +
+    '<button class="main-btn primary punch-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
+    '<button class="main-btn punch-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
+  '</div>' +
+  '<div class="daily-quote">' +
+    '<div class="daily-quote-title">今日小語</div>' +
+    '<div id="dailyQuoteText">' + getDailyQuote() + '</div>' +
+  '</div>';
+      
+  loadPunchTargets();
   bindPunchButtons();
 }
 
