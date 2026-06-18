@@ -71,6 +71,8 @@
     let currentMode = 'employee';
     let punchTargets = [];
     let selectedPunchTargetUserId = '';
+    let punchTargetsLoaded = false;
+    let punchTargetsIsAdmin = false;
     
     const menus = {
   employee: [
@@ -255,7 +257,17 @@ function loadPunchTargets() {
     return;
   }
 
+  if (punchTargetsLoaded) {
+    renderPunchIdentityArea();
+    return;
+  }
+
+  area.innerHTML = '<div class="placeholder">正在讀取打卡身分...</div>';
+
   callApi('getPunchTargets', {}, function(result) {
+    punchTargetsLoaded = true;
+    punchTargetsIsAdmin = !!result.isAdmin;
+
     if (!result.success || !result.isAdmin) {
       area.innerHTML = '';
       selectedPunchTargetUserId = '';
@@ -265,19 +277,30 @@ function loadPunchTargets() {
     punchTargets = result.targets || [];
     selectedPunchTargetUserId = result.currentUserId || '';
 
-    area.innerHTML =
-      '<div class="form" style="margin-bottom:12px;">' +
-        '<label>打卡身分</label>' +
-        '<select id="punchTargetSelect" class="input" onchange="selectedPunchTargetUserId=this.value">' +
-          punchTargets.map(function(item) {
-            const selected = item.userId === selectedPunchTargetUserId ? ' selected' : '';
-            return '<option value="' + item.userId + '"' + selected + '>' +
-              item.name + '｜' + item.employeeNo + '｜' + item.department +
-            '</option>';
-          }).join('') +
-        '</select>' +
-      '</div>';
+    renderPunchIdentityArea();
   });
+}
+
+function renderPunchIdentityArea() {
+  const area = document.getElementById('punchIdentityArea');
+
+  if (!punchTargetsIsAdmin || punchTargets.length === 0) {
+    area.innerHTML = '';
+    return;
+  }
+
+  area.innerHTML =
+    '<div class="form" style="margin-bottom:12px;">' +
+      '<label>打卡身分</label>' +
+      '<select id="punchTargetSelect" class="input" onchange="selectedPunchTargetUserId=this.value">' +
+        punchTargets.map(function(item) {
+          const selected = item.userId === selectedPunchTargetUserId ? ' selected' : '';
+          return '<option value="' + item.userId + '"' + selected + '>' +
+            item.name + '｜' + item.employeeNo + '｜' + item.department +
+          '</option>';
+        }).join('') +
+      '</select>' +
+    '</div>';
 }
     
       function renderLeavePage() {
