@@ -371,7 +371,6 @@ const dailyHtml = (data.dailyRecords || []).map(function(item) {
     '　上班 ' + item.clockIn +
     '　下班 ' + item.clockOut +
     '　時數 ' + item.hoursText +
-    (item.status === '異常' ? '　異常：' + item.reason : '') +
   '</div>';
 }).join('');
 
@@ -386,7 +385,6 @@ document.getElementById('monthlyHoursResult').innerHTML =
     '<div class="card-line">總出勤時數：' + data.totalHours + ' 小時</div>' +
     '<div class="card-line">加班總分鐘：' + data.overtimeMinutes + ' 分鐘</div>' +
     '<div class="card-line">加班換算：' + data.overtimeText + '</div>' +
-    '<div class="card-line">異常天數：' + data.abnormalDays + ' 天</div>' +
   '</div>';
 
     setStatus(result.message);
