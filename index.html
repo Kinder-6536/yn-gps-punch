@@ -48,6 +48,26 @@
   font-weight:700;
   opacity:.95;
 }
+    .daily-quote {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f0f7ff;
+  border: 1px solid #d6e9ff;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+.daily-quote-title {
+  font-weight: 900;
+  color: #1769aa;
+  margin-bottom: 6px;
+}
+
+.main-btn span {
+  font-size: 13px;
+  font-weight: 700;
+}
   </style>
 </head>
 <body>
@@ -84,17 +104,16 @@
     let punchTargetsLoaded = false;
     let punchTargetsIsAdmin = false;
     
-    const menus = {
-  employee: [
-    ['punch', '我要打卡'],
-    ['todayStatus', '今日狀態'],
-    ['leave', '請假申請'],
-    ['makeup', '補卡申請'],
-    ['myAbnormal', '異常出勤'],
-    ['records', '出勤紀錄'],
-    ['overtime', '加班統計'],
-    ['more', '更多功能']
-  ],
+    employee: [
+  ['punch', '我要打卡'],
+  ['status', '今日狀態'],
+  ['leave', '請假申請'],
+  ['makeup', '補卡申請'],
+  ['abnormalEmployee', '異常出勤'],
+  ['report', '出勤紀錄'],
+  ['overtime', '本月時數'],
+  ['feedback', '意見反饋']
+],
   admin: [
   ['recentAbnormal', '近期異常'],
   ['realtime', '即時出勤'],
@@ -245,20 +264,36 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 
     function renderPunchPage() {
   document.getElementById('panelTitle').textContent = '我要打卡';
-
   document.getElementById('content').innerHTML =
-    '<div id="punchIdentityArea"></div>' +
-    '<div>請選擇打卡動作</div><div class="grid">' +
-      '<button class="main-btn primary punch-btn multi-lang-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
-      '<button class="main-btn punch-btn multi-lang-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
-      '<button class="main-btn punch-btn multi-lang-btn" data-action="外出">外出<br><span>Ra ngoài</span><br><span>ออกข้างนอก</span></button>' +
-      '<button class="main-btn punch-btn multi-lang-btn" data-action="返回">返回<br><span>Quay lại</span><br><span>กลับมา</span></button>' +
+    '<div>請選擇打卡動作</div>' +
+    '<div class="grid">' +
+      '<button class="main-btn primary punch-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
+      '<button class="main-btn punch-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
+    '</div>' +
+    '<div class="daily-quote">' +
+      '<div class="daily-quote-title">今日小語</div>' +
+      '<div id="dailyQuoteText">' + getDailyQuote() + '</div>' +
     '</div>';
 
   bindPunchButtons();
-  loadPunchTargets();
 }
 
+function getDailyQuote() {
+  const quotes = [
+    '今天也辛苦了，穩穩完成一件事，就是很好的前進。',
+    '每一次準時開始，都是對自己生活的照顧。',
+    '慢慢來也沒關係，只要有往前走就很好。',
+    '把今天做好，明天就會輕一點。',
+    '認真工作的你，值得被好好肯定。',
+    '小小的努力，累積久了也會變成很大的力量。',
+    '今天保持平安、順利、心情穩定，就是很棒的一天。',
+    '不需要完美，只要比昨天更踏實一點。'
+  ];
+
+  const index = new Date().getDate() % quotes.length;
+  return quotes[index];
+}
+    
 function loadPunchTargets() {
   const area = document.getElementById('punchIdentityArea');
 
