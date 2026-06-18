@@ -225,7 +225,6 @@ setStatus('已取得 LINE 資料，請選擇功能。');
     function showPage(page) {
   if (page === 'punch') return renderPunchPage();
   if (page === 'leave') return renderLeavePage();
-  if (page === 'makeup') return renderMakeupPage();
   if (page === 'leaveReview') return renderLeaveReviewPage();
   if (page === 'reviewCenter') return renderReviewCenterPage();
   if (page === 'monthlyHours') return renderMonthlyHoursPage();
@@ -233,6 +232,8 @@ setStatus('已取得 LINE 資料，請選擇功能。');
   if (page === 'abnormalEmployee') return renderApiMessagePage('異常出勤', 'getEmployeeAbnormal');
   if (page === 'report') return renderApiMessagePage('出勤紀錄', 'getRecentPunchRecords');
   if (page === 'feedback') return renderFeedbackPage();
+  if (page === 'makeup') return renderMakeupPunchPage();
+
       
   const titles = {
     todayStatus: '今日狀態',
@@ -408,14 +409,139 @@ function renderPunchIdentityArea() {
   setStatus('請填寫請假資料。');
 }
 
-function renderMakeupPage() {
+  
+function renderMakeupPunchPage() {
   document.getElementById('panelTitle').textContent = '補卡申請';
+
   document.getElementById('content').innerHTML =
-    '<div class="placeholder">' +
-    '補卡申請表單會放在這裡。<br>' +
-    '之後需要新增「補卡申請」工作表，審核通過後才補進打卡紀錄。' +
+    '<div class="form">' +
+      '<div id="makeupTargetArea"></div>' +
+
+      '<label>補卡日期</label>' +
+      '<input id="makeupDate" class="input" type="date">' +
+
+      '<label>補卡選項</label>' +
+      '<select id="makeupType" class="input" onchange="updateMakeupTimeFields()">' +
+        '<option value="上班">上班</option>' +
+        '<option value="下班">下班</option>' +
+        '<option value="上班 + 下班">上班 + 下班</option>' +
+      '</select>' +
+
+      '<div id="makeupTimeFields"></div>' +
+
+      '<label>補卡原因</label>' +
+      '<textarea id="makeupReason" class="input" rows="4" placeholder="請輸入補卡原因"></textarea>' +
+
+      '<button class="main-btn primary full-btn" onclick="submitMakeupPunch()">送出補卡申請</button>' +
     '</div>';
-  setStatus('下一步會建立補卡申請流程。');
+
+  setStatus('');
+  renderMakeupTargetArea();
+  updateMakeupTimeFields();
+}
+
+function submitMakeupPunch() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const punchDate = document.getElementById('makeupDate').value;
+  const punchType = document.getElementById('makeupType').value;
+  const reason = document.getElementById('makeupReason').value.trim();
+
+  const clockInInput = document.getElementById('makeupClockInTime');
+  const clockOutInput = document.getElementById('makeupClockOutTime');
+
+  const clockInTime = clockInInput ? clockInInput.value : '';
+  const clockOutTime = clockOutInput ? clockOutInput.value : '';
+
+  const targetSelect = document.getElementById('makeupTargetUserId');
+  const targetUserId = targetSelect ? targetSelect.value : '';
+
+  if (!punchDate || !punchType || !reason) {
+    setStatus('請完整填寫補卡資料。');
+    return;
+  }
+
+  if ((punchType === '上班' || punchType === '上班 + 下班') && !clockInTime) {
+    setStatus('請填寫上班補卡時間。');
+    return;
+  }
+
+  if ((punchType === '下班' || punchType === '上班 + 下班') && !clockOutTime) {
+    setStatus('請填寫下班補卡時間。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    setStatus(result.message);
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'submitMakeupPunch',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    targetUserId: targetUserId,
+    punchDate: punchDate,
+    punchType: punchType,
+    clockInTime: clockInTime,
+    clockOutTime: clockOutTime,
+    reason: reason
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('送出失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('正在送出補卡申請...');
+}
+
+    
+function updateMakeupTimeFields() {
+  const type = document.getElementById('makeupType').value;
+  let html = '';
+
+  if (type === '上班' || type === '上班 + 下班') {
+    html +=
+      '<label>上班時間</label>' +
+      '<input id="makeupClockInTime" class="input" type="time">';
+  }
+
+  if (type === '下班' || type === '上班 + 下班') {
+    html +=
+      '<label>下班時間</label>' +
+      '<input id="makeupClockOutTime" class="input" type="time">';
+  }
+
+  document.getElementById('makeupTimeFields').innerHTML = html;
+}
+
+function renderMakeupTargetArea() {
+  const area = document.getElementById('makeupTargetArea');
+
+  if (!punchTargetsLoaded || !punchTargetsIsAdmin) {
+    area.innerHTML = '';
+    return;
+  }
+
+  area.innerHTML =
+    '<label>補卡對象</label>' +
+    '<select id="makeupTargetUserId" class="input">' +
+      punchTargets.map(function(employee) {
+        return '<option value="' + employee.userId + '">' +
+          employee.name + '｜' + employee.employeeNo + '｜' + employee.department +
+        '</option>';
+      }).join('') +
+    '</select>';
 }
 
 function renderReviewCenterPage() {
