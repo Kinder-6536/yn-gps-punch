@@ -233,7 +233,8 @@ setStatus('已取得 LINE 資料，請選擇功能。');
   if (page === 'report') return renderApiMessagePage('出勤紀錄', 'getRecentPunchRecords');
   if (page === 'feedback') return renderFeedbackPage();
   if (page === 'makeup') return renderMakeupPunchPage();
-
+  if (page === 'overtime') return renderEmployeeMonthlyHoursPage();
+      
       
   const titles = {
     todayStatus: '今日狀態',
@@ -674,6 +675,84 @@ function isLateClockIn(timeText) {
   setStatus('請按查詢。');
 }
 
+function renderEmployeeMonthlyHoursPage() {
+  document.getElementById('panelTitle').textContent = '本月時數';
+
+  const now = new Date();
+  const monthValue = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  document.getElementById('content').innerHTML =
+    '<label>月份</label>' +
+    '<input id="employeeMonthInput" class="input" type="month" value="' + monthValue + '">' +
+    '<button class="main-btn primary full-btn" onclick="queryEmployeeMonthlyHours()">查詢本月時數</button>';
+
+  setStatus('請選擇月份後查詢。');
+}
+
+function queryEmployeeMonthlyHours() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const month = document.getElementById('employeeMonthInput').value;
+
+  if (!month) {
+    setStatus('請選擇月份。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    if (!result.success) {
+      setStatus(result.message);
+      delete window[callbackName];
+      return;
+    }
+
+    const data = result.data;
+
+    const dailyHtml = (data.dailyRecords || []).map(function(item) {
+      return item.date +
+        '　上班 ' + item.clockIn +
+        '　下班 ' + item.clockOut +
+        '　時數 ' + item.hoursText;
+    }).join('\n');
+
+    setStatus(
+      data.month + ' ' + data.name + '\n' +
+      '員工編號：' + data.employeeNo + '\n\n' +
+      dailyHtml + '\n\n' +
+      '出勤天數：' + data.workDays + ' 天\n' +
+      '總出勤時數：' + data.totalHours + ' 小時\n' +
+      '加班總分鐘：' + data.overtimeMinutes + ' 分鐘\n' +
+      '加班換算：' + data.overtimeText
+    );
+
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'getMyMonthlyHoursSummary',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    month: month
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('查詢失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('查詢中...');
+}
+
+    
 function loadApiMessage(apiName) {
   if (!ready) {
     setStatus('LINE 尚未初始化完成，請稍候。');
