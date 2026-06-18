@@ -38,6 +38,16 @@
 .reject-btn { background:#d92d20; }
 .small-btn { border:0; border-radius:10px; padding:10px; color:#fff; font-size:15px; font-weight:800; }
     .late-text { color:#d92d20; font-weight:900; }
+    .multi-lang-btn {
+  line-height:1.25;
+  padding:12px 8px;
+}
+
+.multi-lang-btn span {
+  font-size:13px;
+  font-weight:700;
+  opacity:.95;
+}
   </style>
 </head>
 <body>
@@ -239,10 +249,10 @@ setStatus('已取得 LINE 資料，請選擇功能。');
   document.getElementById('content').innerHTML =
     '<div id="punchIdentityArea"></div>' +
     '<div>請選擇打卡動作</div><div class="grid">' +
-      '<button class="main-btn primary punch-btn" data-action="上班">上班</button>' +
-      '<button class="main-btn punch-btn" data-action="下班">下班</button>' +
-      '<button class="main-btn punch-btn" data-action="外出">外出</button>' +
-      '<button class="main-btn punch-btn" data-action="返回">返回</button>' +
+      '<button class="main-btn primary punch-btn multi-lang-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
+      '<button class="main-btn punch-btn multi-lang-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
+      '<button class="main-btn punch-btn multi-lang-btn" data-action="外出">外出<br><span>Ra ngoài</span><br><span>ออกข้างนอก</span></button>' +
+      '<button class="main-btn punch-btn multi-lang-btn" data-action="返回">返回<br><span>Quay lại</span><br><span>กลับมา</span></button>' +
     '</div>';
 
   bindPunchButtons();
