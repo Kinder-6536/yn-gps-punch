@@ -69,7 +69,9 @@
     let idToken = '';
     let ready = false;
     let currentMode = 'employee';
-
+    let punchTargets = [];
+    let selectedPunchTargetUserId = '';
+    
     const menus = {
   employee: [
     ['punch', '我要打卡'],
@@ -230,17 +232,54 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 }
 
     function renderPunchPage() {
-      document.getElementById('panelTitle').textContent = '我要打卡';
-      document.getElementById('content').innerHTML =
-        '<div>請選擇打卡動作</div><div class="grid">' +
-        '<button class="main-btn primary punch-btn" data-action="上班">上班</button>' +
-        '<button class="main-btn punch-btn" data-action="下班">下班</button>' +
-        '<button class="main-btn punch-btn" data-action="外出">外出</button>' +
-        '<button class="main-btn punch-btn" data-action="返回">返回</button>' +
-        '</div>';
-      bindPunchButtons();
+  document.getElementById('panelTitle').textContent = '我要打卡';
+
+  document.getElementById('content').innerHTML =
+    '<div id="punchIdentityArea"></div>' +
+    '<div>請選擇打卡動作</div><div class="grid">' +
+      '<button class="main-btn primary punch-btn" data-action="上班">上班</button>' +
+      '<button class="main-btn punch-btn" data-action="下班">下班</button>' +
+      '<button class="main-btn punch-btn" data-action="外出">外出</button>' +
+      '<button class="main-btn punch-btn" data-action="返回">返回</button>' +
+    '</div>';
+
+  bindPunchButtons();
+  loadPunchTargets();
+}
+
+function loadPunchTargets() {
+  const area = document.getElementById('punchIdentityArea');
+
+  if (!ready) {
+    area.innerHTML = '';
+    return;
+  }
+
+  callApi('getPunchTargets', {}, function(result) {
+    if (!result.success || !result.isAdmin) {
+      area.innerHTML = '';
+      selectedPunchTargetUserId = '';
+      return;
     }
 
+    punchTargets = result.targets || [];
+    selectedPunchTargetUserId = result.currentUserId || '';
+
+    area.innerHTML =
+      '<div class="form" style="margin-bottom:12px;">' +
+        '<label>打卡身分</label>' +
+        '<select id="punchTargetSelect" class="input" onchange="selectedPunchTargetUserId=this.value">' +
+          punchTargets.map(function(item) {
+            const selected = item.userId === selectedPunchTargetUserId ? ' selected' : '';
+            return '<option value="' + item.userId + '"' + selected + '>' +
+              item.name + '｜' + item.employeeNo + '｜' + item.department +
+            '</option>';
+          }).join('') +
+        '</select>' +
+      '</div>';
+  });
+}
+    
       function renderLeavePage() {
   document.getElementById('panelTitle').textContent = '請假申請';
   document.getElementById('content').innerHTML =
@@ -444,15 +483,16 @@ function isLateClockIn(timeText) {
       };
 
       const params = new URLSearchParams({
-        api:'submitPunch',
-        callback:callbackName,
-        action:punchAction,
-        accessToken:accessToken,
-        idToken:idToken,
-        latitude:coords.latitude,
-        longitude:coords.longitude,
-        accuracy:coords.accuracy
-      });
+  api:'submitPunch',
+  callback:callbackName,
+  action:punchAction,
+  accessToken:accessToken,
+  idToken:idToken,
+  targetUserId:selectedPunchTargetUserId,
+  latitude:coords.latitude,
+  longitude:coords.longitude,
+  accuracy:coords.accuracy
+});
 
       const script = document.createElement('script');
       script.src = APPS_SCRIPT_URL + '?' + params.toString();
