@@ -510,10 +510,15 @@ function isLateClockIn(timeText) {
       const callbackName = 'jsonpCallback_' + Date.now();
 
       window[callbackName] = function(result) {
-        setStatus(result.message);
-        setButtonsDisabled(false);
-        delete window[callbackName];
-      };
+  if (result.success) {
+    setStatus(buildPunchSuccessMessage(result.message));
+  } else {
+    setStatus(result.message);
+  }
+
+  setButtonsDisabled(false);
+  delete window[callbackName];
+};
 
       const params = new URLSearchParams({
   api:'submitPunch',
@@ -536,6 +541,37 @@ function isLateClockIn(timeText) {
       document.body.appendChild(script);
     }
 
+    function buildPunchSuccessMessage(message) {
+  const text = String(message || '');
+
+  const firstLine = text.split('\n')[0] || '';
+  const timeMatch = text.match(/時間[:：]\s*(.+)/);
+  const placeMatch = text.match(/地點[:：]\s*(.+)/);
+  const distanceMatch = text.match(/距離[:：]\s*(.+)/);
+
+  const time = timeMatch ? timeMatch[1] : '';
+  const place = placeMatch ? placeMatch[1] : '';
+  const distance = distanceMatch ? distanceMatch[1] : '';
+
+  return firstLine + '\n' +
+    '時間：' + time + '\n' +
+    '地點：' + place + '\n' +
+    '距離：' + distance + '\n\n' +
+
+    'Vietnamese\n' +
+    'Chấm công thành công\n' +
+    'Thời gian: ' + time + '\n' +
+    'Địa điểm: ' + place + '\n' +
+    'Khoảng cách: ' + distance + '\n\n' +
+
+    'Thai\n' +
+    'ลงเวลาสำเร็จ\n' +
+    'เวลา: ' + time + '\n' +
+    'สถานที่: ' + place + '\n' +
+    'ระยะทาง: ' + distance;
+}
+
+    
     function submitLeave() {
   if (!ready) {
     setStatus('LINE 尚未初始化完成，請稍候。');
