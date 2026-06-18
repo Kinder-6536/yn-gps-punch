@@ -229,7 +229,7 @@ setStatus('已取得 LINE 資料，請選擇功能。');
   if (page === 'reviewCenter') return renderReviewCenterPage();
   if (page === 'monthlyHours') return renderMonthlyHoursPage();
   if (page === 'status') return renderApiMessagePage('今日狀態', 'getTodayStatus');
-  if (page === 'abnormalEmployee') return renderApiMessagePage('異常出勤', 'getEmployeeAbnormal');
+  if (page === 'abnormalEmployee') return renderEmployeeAbnormalMonthPage();
   if (page === 'report') return renderApiMessagePage('出勤紀錄', 'getRecentPunchRecords');
   if (page === 'feedback') return renderFeedbackPage();
   if (page === 'makeup') return renderMakeupPunchPage();
@@ -735,6 +735,59 @@ function queryEmployeeMonthlyHours() {
 
   const params = new URLSearchParams({
     api: 'getMyMonthlyHoursSummary',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    month: month
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('查詢失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('查詢中...');
+}
+
+function renderEmployeeAbnormalMonthPage() {
+  document.getElementById('panelTitle').textContent = '異常出勤';
+
+  const now = new Date();
+  const monthValue = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  document.getElementById('content').innerHTML =
+    '<label>月份</label>' +
+    '<input id="employeeAbnormalMonthInput" class="input" type="month" value="' + monthValue + '">' +
+    '<button class="main-btn primary full-btn" onclick="queryEmployeeAbnormalByMonth()">查詢異常</button>';
+
+  setStatus('請選擇月份後查詢。');
+}
+
+function queryEmployeeAbnormalByMonth() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const month = document.getElementById('employeeAbnormalMonthInput').value;
+
+  if (!month) {
+    setStatus('請選擇月份。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    setStatus(result.message);
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'getEmployeeAbnormalByMonth',
     callback: callbackName,
     accessToken: accessToken,
     idToken: idToken,
