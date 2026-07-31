@@ -73,6 +73,16 @@
   resize: vertical;
   line-height: 1.6;
 }
+    .overtime-applicant { padding:12px; background:#f0f7ff; border:1px solid #d6e9ff; border-radius:8px; line-height:1.6; color:#344054; }
+    .overtime-entry { padding:14px 0; border-top:1px solid #e5e7eb; }
+    .overtime-entry:first-child { border-top:0; padding-top:0; }
+    .overtime-entry-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .overtime-entry-title { font-size:16px; font-weight:800; color:#344054; }
+    .overtime-remove-btn { border:0; background:transparent; color:#d92d20; padding:6px; font-size:14px; font-weight:800; }
+    .overtime-time-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .overtime-time-grid > div { display:grid; gap:8px; }
+    .overtime-hours { color:#1769aa; font-size:14px; font-weight:800; min-height:22px; }
+    .overtime-add-btn { width:100%; border:1px solid #06c755; background:#fff; color:#087a3b; border-radius:10px; padding:12px; font-size:16px; font-weight:800; margin-top:4px; }
   </style>
 </head>
 <body>
@@ -108,12 +118,15 @@
     let selectedPunchTargetUserId = '';
     let punchTargetsLoaded = false;
     let punchTargetsIsAdmin = false;
+    let overtimeApplicant = null;
+    let overtimeEmployees = [];
+    let overtimeEntrySequence = 0;
 
     const menus = {
     employee: [
   ['punch', '我要打卡'],
   ['status', '今日狀態'],
-  ['leave', '請假申請'],
+  ['leave', '加班申請'],
   ['makeup', '補卡申請'],
   ['abnormalEmployee', '異常出勤'],
   ['report', '出勤紀錄'],
@@ -149,9 +162,9 @@
       try {
         renderMenu();
         renderPunchPage();
-        setStatus('版本：0617-leave-auto-hours\n正在初始化 LINE 登入...');
+        setStatus('版本：0731-overtime-multi\n正在初始化 LINE 登入...');
 
-setStatus('版本：0617-leave-auto-hours\n準備初始化 LIFF...');
+setStatus('版本：0731-overtime-multi\n準備初始化 LIFF...');
 
 await liff.init({ liffId: LIFF_ID });
 
@@ -224,7 +237,7 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 
     function showPage(page) {
   if (page === 'punch') return renderPunchPage();
-  if (page === 'leave') return renderLeavePage();
+  if (page === 'leave') return renderOvertimeApplicationPage();
   if (page === 'leaveReview') return renderLeaveReviewPage();
   if (page === 'reviewCenter') return renderReviewCenterPage();
   if (page === 'monthlyHours') return renderMonthlyHoursPage();
@@ -372,42 +385,227 @@ function renderPunchIdentityArea() {
     '</div>';
 }
     
-      function renderLeavePage() {
-  document.getElementById('panelTitle').textContent = '請假申請';
+      function renderOvertimeApplicationPage() {
+  document.getElementById('panelTitle').textContent = '加班申請';
   document.getElementById('content').innerHTML =
     '<div class="form">' +
-      '<label>假別</label>' +
-      '<select id="leaveType" class="input">' +
-        '<option value="特休">特休</option>' +
-        '<option value="病假">病假</option>' +
-        '<option value="事假">事假</option>' +
-        '<option value="公假">公假</option>' +
-        '<option value="喪假">喪假</option>' +
-        '<option value="婚假">婚假</option>' +
-        '<option value="產假">產假</option>' +
-      '</select>' +
-
-      '<label>開始日期</label>' +
-      '<input id="leaveStartDate" class="input" type="date">' +
-
-      '<label>開始時間</label>' +
-      '<input id="leaveStartTime" class="input" type="time">' +
-
-      '<label>結束日期</label>' +
-      '<input id="leaveEndDate" class="input" type="date">' +
-
-      '<label>結束時間</label>' +
-      '<input id="leaveEndTime" class="input" type="time">' +
-
-      '<div class="placeholder">請假時數會由系統依日期與上班日自動計算。</div>'+
-
-      '<label>事由</label>' +
-      '<textarea id="leaveReason" class="input textarea" placeholder="請輸入請假事由"></textarea>' +
-
-      '<button class="main-btn primary full-btn" onclick="submitLeave()">送出請假申請</button>' +
+      '<div id="overtimeApplicant" class="overtime-applicant">正在讀取申請人與員工資料...</div>' +
+      '<div id="overtimeEntries"></div>' +
+      '<button type="button" class="overtime-add-btn" onclick="addOvertimeEntry()">＋ 新增一筆</button>' +
+      '<button type="button" class="main-btn primary full-btn" onclick="submitOvertimeApplications()">送出加班申請</button>' +
     '</div>';
 
-  setStatus('請填寫請假資料。');
+  overtimeApplicant = null;
+  overtimeEmployees = [];
+  overtimeEntrySequence = 0;
+  setStatus('正在讀取加班申請資料...');
+
+  callApi('getOvertimeFormData', {}, function(result) {
+    if (!result.success) {
+      setStatus(result.message);
+      return;
+    }
+
+    overtimeApplicant = result.applicant || null;
+    overtimeEmployees = result.employees || [];
+
+    if (!overtimeApplicant || overtimeEmployees.length === 0) {
+      setStatus('找不到可使用的員工資料。');
+      return;
+    }
+
+    document.getElementById('overtimeApplicant').innerHTML =
+      '<strong>申請人：</strong>' +
+      escapeOvertimeHtml(overtimeApplicant.name) +
+      '（' + escapeOvertimeHtml(overtimeApplicant.employeeNo) + '）' +
+      '<br><span>可替自己或其他員工申請。</span>';
+
+    addOvertimeEntry({
+      employeeNo: overtimeApplicant.employeeNo,
+      overtimeDate: getTodayInputValue()
+    });
+    setStatus('請填寫加班資料，可一次新增多筆。');
+  });
+}
+
+function addOvertimeEntry(initialValues) {
+  const container = document.getElementById('overtimeEntries');
+
+  if (!container || overtimeEmployees.length === 0) {
+    setStatus('員工資料尚未讀取完成，請稍候。');
+    return;
+  }
+
+  if (container.querySelectorAll('.overtime-entry').length >= 10) {
+    setStatus('一次最多可新增 10 筆加班申請。');
+    return;
+  }
+
+  const values = initialValues || {};
+  const entryId = ++overtimeEntrySequence;
+  const selectedEmployeeNo = values.employeeNo || overtimeApplicant.employeeNo;
+  const options = overtimeEmployees.map(function(employee) {
+    const selected = employee.employeeNo === selectedEmployeeNo ? ' selected' : '';
+    return '<option value="' + escapeOvertimeHtml(employee.employeeNo) + '"' + selected + '>' +
+      escapeOvertimeHtml(employee.name) + '｜' +
+      escapeOvertimeHtml(employee.employeeNo) + '｜' +
+      escapeOvertimeHtml(employee.department) +
+    '</option>';
+  }).join('');
+
+  container.insertAdjacentHTML('beforeend',
+    '<section class="overtime-entry" data-entry-id="' + entryId + '">' +
+      '<div class="overtime-entry-header">' +
+        '<div class="overtime-entry-title">加班資料</div>' +
+        '<button type="button" class="overtime-remove-btn" onclick="removeOvertimeEntry(' + entryId + ')">移除</button>' +
+      '</div>' +
+      '<div class="form">' +
+        '<label>加班人員</label>' +
+        '<select class="input overtime-employee">' + options + '</select>' +
+        '<label>申請加班日期</label>' +
+        '<input class="input overtime-date" type="date" value="' +
+          escapeOvertimeHtml(values.overtimeDate || getTodayInputValue()) + '">' +
+        '<label>申請加班區間</label>' +
+        '<div class="overtime-time-grid">' +
+          '<div><label>開始時間</label><input class="input overtime-start" type="time" onchange="updateOvertimeHours(' + entryId + ')"></div>' +
+          '<div><label>結束時間</label><input class="input overtime-end" type="time" onchange="updateOvertimeHours(' + entryId + ')"></div>' +
+        '</div>' +
+        '<div class="overtime-hours">時數：請選擇時間</div>' +
+        '<label>事由</label>' +
+        '<textarea class="input textarea overtime-reason" placeholder="請輸入加班事由"></textarea>' +
+      '</div>' +
+    '</section>'
+  );
+
+  renumberOvertimeEntries();
+}
+
+function removeOvertimeEntry(entryId) {
+  const container = document.getElementById('overtimeEntries');
+  const entries = container ? container.querySelectorAll('.overtime-entry') : [];
+
+  if (entries.length <= 1) {
+    setStatus('至少需要保留一筆加班申請。');
+    return;
+  }
+
+  const entry = container.querySelector('[data-entry-id="' + entryId + '"]');
+
+  if (entry) {
+    entry.remove();
+    renumberOvertimeEntries();
+  }
+}
+
+function renumberOvertimeEntries() {
+  const entries = document.querySelectorAll('#overtimeEntries .overtime-entry');
+
+  entries.forEach(function(entry, index) {
+    entry.querySelector('.overtime-entry-title').textContent = '第 ' + (index + 1) + ' 筆';
+    entry.querySelector('.overtime-remove-btn').style.visibility =
+      entries.length > 1 ? 'visible' : 'hidden';
+  });
+}
+
+function updateOvertimeHours(entryId) {
+  const entry = document.querySelector('[data-entry-id="' + entryId + '"]');
+
+  if (!entry) return;
+
+  const startTime = entry.querySelector('.overtime-start').value;
+  const endTime = entry.querySelector('.overtime-end').value;
+  const output = entry.querySelector('.overtime-hours');
+
+  if (!startTime || !endTime) {
+    output.textContent = '時數：請選擇時間';
+    return;
+  }
+
+  const minutes = overtimeInputToMinutes(endTime) - overtimeInputToMinutes(startTime);
+
+  if (minutes <= 0) {
+    output.textContent = '時數：請確認開始與結束時間';
+    return;
+  }
+
+  output.textContent = '時數：' + (Math.round((minutes / 60) * 100) / 100) + ' 小時';
+}
+
+function submitOvertimeApplications() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const entries = Array.from(document.querySelectorAll('#overtimeEntries .overtime-entry'));
+
+  if (entries.length === 0) {
+    setStatus('請至少新增一筆加班申請。');
+    return;
+  }
+
+  const items = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const item = {
+      employeeNo: entry.querySelector('.overtime-employee').value,
+      overtimeDate: entry.querySelector('.overtime-date').value,
+      startTime: entry.querySelector('.overtime-start').value,
+      endTime: entry.querySelector('.overtime-end').value,
+      reason: entry.querySelector('.overtime-reason').value.trim()
+    };
+
+    if (!item.employeeNo || !item.overtimeDate || !item.startTime || !item.endTime || !item.reason) {
+      setStatus('第 ' + (i + 1) + ' 筆資料尚未填寫完整。');
+      return;
+    }
+
+    if (overtimeInputToMinutes(item.endTime) <= overtimeInputToMinutes(item.startTime)) {
+      setStatus('第 ' + (i + 1) + ' 筆結束時間必須晚於開始時間。');
+      return;
+    }
+
+    items.push(item);
+  }
+
+  setStatus('正在送出加班申請...');
+
+  callApi('submitOvertime', { items: JSON.stringify(items) }, function(result) {
+    setStatus(result.message);
+
+    if (!result.success) {
+      return;
+    }
+
+    const container = document.getElementById('overtimeEntries');
+    container.innerHTML = '';
+    addOvertimeEntry({
+      employeeNo: overtimeApplicant.employeeNo,
+      overtimeDate: getTodayInputValue()
+    });
+  });
+}
+
+function overtimeInputToMinutes(value) {
+  const parts = String(value || '').split(':').map(Number);
+  return parts.length === 2 ? parts[0] * 60 + parts[1] : 0;
+}
+
+function getTodayInputValue() {
+  const now = new Date();
+  return now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+}
+
+function escapeOvertimeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
   
@@ -984,54 +1182,6 @@ function submitFeedback() {
 }
 
     
-    function submitLeave() {
-  if (!ready) {
-    setStatus('LINE 尚未初始化完成，請稍候。');
-    return;
-  }
-
-  const leaveType = document.getElementById('leaveType').value;
-  const startDate = document.getElementById('leaveStartDate').value;
-  const startTime = document.getElementById('leaveStartTime').value;
-  const endDate = document.getElementById('leaveEndDate').value;
-  const endTime = document.getElementById('leaveEndTime').value;
-  const reason = document.getElementById('leaveReason').value.trim();
-
-  if (!startDate || !startTime || !endDate || !endTime || !reason) {
-    setStatus('請完整填寫請假資料。');
-    return;
-  }
-
-  const callbackName = 'jsonpCallback_' + Date.now();
-
-  window[callbackName] = function(result) {
-    setStatus(result.message);
-    delete window[callbackName];
-  };
-
-  const params = new URLSearchParams({
-    api: 'submitLeave',
-    callback: callbackName,
-    accessToken: accessToken,
-    idToken: idToken,
-    leaveType: leaveType,
-    startDate: startDate,
-    startTime: startTime,
-    endDate: endDate,
-    endTime: endTime,
-    reason: reason
-  });
-
-  const script = document.createElement('script');
-  script.src = APPS_SCRIPT_URL + '?' + params.toString();
-  script.onerror = function() {
-    setStatus('送出失敗：無法連線到 Apps Script。');
-  };
-  document.body.appendChild(script);
-
-  setStatus('正在送出請假申請...');
-}
-
 function renderLeaveReviewPage() {
   document.getElementById('panelTitle').textContent = '請假審核';
   document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取待審核請假單...</div>';
