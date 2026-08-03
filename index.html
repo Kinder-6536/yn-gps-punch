@@ -83,6 +83,23 @@
     .overtime-time-grid > div { display:grid; gap:8px; }
     .overtime-hours { color:#1769aa; font-size:14px; font-weight:800; min-height:22px; }
     .overtime-add-btn { width:100%; border:1px solid #06c755; background:#fff; color:#087a3b; border-radius:10px; padding:12px; font-size:16px; font-weight:800; margin-top:4px; }
+    .admin-toolbar { display:grid; gap:10px; margin-bottom:14px; }
+    .admin-toolbar .toolbar-title { font-size:14px; color:#667085; line-height:1.6; }
+    .admin-filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .admin-list { display:grid; gap:10px; }
+    .admin-card { border:1px solid #e5e7eb; border-radius:14px; padding:12px; background:#fff; }
+    .admin-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .admin-card-name { font-size:17px; font-weight:800; color:#101828; }
+    .admin-card-sub { font-size:13px; color:#667085; line-height:1.5; }
+    .admin-badge-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .admin-badge { display:inline-flex; align-items:center; border-radius:999px; padding:6px 10px; font-size:13px; font-weight:800; background:#eef2ff; color:#344054; }
+    .admin-badge.ok { background:#e9f8ef; color:#087a3b; }
+    .admin-badge.missing { background:#fef3f2; color:#d92d20; }
+    .admin-badge.warn { background:#fff7e6; color:#b54708; }
+    .admin-meta { display:grid; gap:6px; font-size:14px; color:#344054; line-height:1.6; }
+    .admin-reason { margin-top:8px; padding:10px 12px; border-radius:12px; background:#f8fafc; color:#344054; font-size:14px; line-height:1.6; }
+    .admin-empty { border:1px dashed #d0d5dd; border-radius:14px; padding:16px; color:#667085; text-align:center; line-height:1.7; }
+    .admin-month-chip { display:inline-block; margin-bottom:8px; padding:6px 10px; border-radius:999px; background:#f0f7ff; color:#1769aa; font-size:13px; font-weight:800; }
   </style>
 </head>
 <body>
@@ -237,6 +254,8 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 
     function showPage(page) {
   if (page === 'punch') return renderPunchPage();
+  if (page === 'recentAbnormal') return renderRecentAbnormalPage();
+  if (page === 'realtime') return renderRealtimePage();
   if (page === 'leave') return renderOvertimeApplicationPage();
   if (page === 'leaveReview') return renderLeaveReviewPage();
   if (page === 'reviewCenter') return renderReviewCenterPage();
@@ -857,6 +876,210 @@ function isLateClockIn(timeText) {
   const minutes = Number(parts[0]) * 60 + Number(parts[1]);
 
   return minutes >= (8 * 60 + 11);
+}
+
+let adminRealtimeRows = [];
+let adminAbnormalRows = [];
+let adminAbnormalMonthText = '';
+
+function renderRealtimePage() {
+  document.getElementById('panelTitle').textContent = '即時出勤';
+  document.getElementById('content').innerHTML =
+    '<div class="admin-toolbar">' +
+      '<div class="toolbar-title">顯示今天所有在職人員的上班與下班打卡狀態。</div>' +
+      '<div class="admin-filter-grid">' +
+        '<select id="realtimeEmployeeFilter" class="input"></select>' +
+        '<input id="realtimeSearchInput" class="input" placeholder="搜尋姓名、員編、部門">' +
+      '</div>' +
+    '</div>' +
+    '<div id="realtimeList" class="admin-list"></div>';
+
+  setStatus('正在讀取即時出勤...');
+
+  callApi('getAdminTodayAttendance', {}, function(result) {
+    if (!result.success) {
+      document.getElementById('realtimeList').innerHTML = '<div class="admin-empty">' + result.message + '</div>';
+      setStatus(result.message);
+      return;
+    }
+
+    adminRealtimeRows = result.rows || [];
+    buildAdminEmployeeFilter('realtimeEmployeeFilter', adminRealtimeRows);
+    bindAdminRealtimeFilter();
+    applyRealtimeFilter();
+    setStatus('即時出勤已更新，共 ' + adminRealtimeRows.length + ' 位。');
+  });
+}
+
+function renderRecentAbnormalPage() {
+  document.getElementById('panelTitle').textContent = '近期異常';
+  document.getElementById('content').innerHTML =
+    '<div class="admin-toolbar">' +
+      '<div class="toolbar-title">顯示本月有未打卡的異常紀錄，可依人員或關鍵字篩選。</div>' +
+      '<div class="admin-filter-grid">' +
+        '<select id="abnormalEmployeeFilter" class="input"></select>' +
+        '<input id="abnormalSearchInput" class="input" placeholder="搜尋姓名、員編、部門、日期">' +
+      '</div>' +
+    '</div>' +
+    '<div id="abnormalList" class="admin-list"></div>';
+
+  setStatus('正在讀取本月異常...');
+
+  callApi('getAdminMonthlyAbnormal', {}, function(result) {
+    if (!result.success) {
+      document.getElementById('abnormalList').innerHTML = '<div class="admin-empty">' + result.message + '</div>';
+      setStatus(result.message);
+      return;
+    }
+
+    adminAbnormalRows = result.rows || [];
+    adminAbnormalMonthText = result.month || '';
+    buildAdminEmployeeFilter('abnormalEmployeeFilter', adminAbnormalRows);
+    bindAdminAbnormalFilter();
+    applyAbnormalFilter();
+    setStatus('近期異常已更新，共 ' + adminAbnormalRows.length + ' 筆。');
+  });
+}
+
+function buildAdminEmployeeFilter(elementId, rows) {
+  const select = document.getElementById(elementId);
+  if (!select) return;
+
+  const options = ['<option value="">全部人員</option>'];
+  const seen = {};
+
+  rows.forEach(function(row) {
+    const employeeNo = String(row.employeeNo || '').trim();
+    const name = String(row.name || '').trim();
+    const department = String(row.department || '').trim();
+
+    if (!employeeNo || seen[employeeNo]) return;
+    seen[employeeNo] = true;
+
+    options.push(
+      '<option value="' + escapeOvertimeHtml(employeeNo) + '">' +
+      escapeOvertimeHtml(name + '｜' + employeeNo + '｜' + department) +
+      '</option>'
+    );
+  });
+
+  select.innerHTML = options.join('');
+}
+
+function bindAdminRealtimeFilter() {
+  const select = document.getElementById('realtimeEmployeeFilter');
+  const input = document.getElementById('realtimeSearchInput');
+  if (select) select.onchange = applyRealtimeFilter;
+  if (input) input.oninput = applyRealtimeFilter;
+}
+
+function bindAdminAbnormalFilter() {
+  const select = document.getElementById('abnormalEmployeeFilter');
+  const input = document.getElementById('abnormalSearchInput');
+  if (select) select.onchange = applyAbnormalFilter;
+  if (input) input.oninput = applyAbnormalFilter;
+}
+
+function getAdminFilteredRows(rows, employeeValue, keyword) {
+  const normalizedKeyword = normalizeAdminKeyword(keyword);
+
+  return rows.filter(function(row) {
+    const employeeMatched = !employeeValue || String(row.employeeNo || '') === employeeValue;
+
+    if (!employeeMatched) return false;
+
+    if (!normalizedKeyword) return true;
+
+    const haystack = [
+      row.date,
+      row.employeeNo,
+      row.name,
+      row.department,
+      row.clockIn,
+      row.clockOut,
+      row.reason
+    ].join(' ');
+
+    return normalizeAdminKeyword(haystack).indexOf(normalizedKeyword) !== -1;
+  });
+}
+
+function applyRealtimeFilter() {
+  const employeeValue = document.getElementById('realtimeEmployeeFilter') ? document.getElementById('realtimeEmployeeFilter').value : '';
+  const keyword = document.getElementById('realtimeSearchInput') ? document.getElementById('realtimeSearchInput').value : '';
+  const rows = getAdminFilteredRows(adminRealtimeRows, employeeValue, keyword);
+  renderRealtimeRows(rows);
+}
+
+function applyAbnormalFilter() {
+  const employeeValue = document.getElementById('abnormalEmployeeFilter') ? document.getElementById('abnormalEmployeeFilter').value : '';
+  const keyword = document.getElementById('abnormalSearchInput') ? document.getElementById('abnormalSearchInput').value : '';
+  const rows = getAdminFilteredRows(adminAbnormalRows, employeeValue, keyword);
+  renderAbnormalRows(rows);
+}
+
+function renderRealtimeRows(rows) {
+  const target = document.getElementById('realtimeList');
+  if (!target) return;
+
+  if (!rows.length) {
+    target.innerHTML = '<div class="admin-empty">目前沒有符合條件的人員。</div>';
+    return;
+  }
+
+  target.innerHTML = rows.map(function(row) {
+    const hasClockIn = row.clockIn && row.clockIn !== '未打卡';
+    const hasClockOut = row.clockOut && row.clockOut !== '未打卡';
+
+    return '<div class="admin-card">' +
+      '<div class="admin-card-head">' +
+        '<div>' +
+          '<div class="admin-card-name">' + escapeOvertimeHtml(row.name || '') + '</div>' +
+          '<div class="admin-card-sub">員編 ' + escapeOvertimeHtml(row.employeeNo || '') + '｜' + escapeOvertimeHtml(row.department || '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="admin-badge-row">' +
+        '<span class="admin-badge ' + (hasClockIn ? 'ok' : 'missing') + '">上班：' + escapeOvertimeHtml(row.clockIn || '未打卡') + '</span>' +
+        '<span class="admin-badge ' + (hasClockOut ? 'ok' : 'missing') + '">下班：' + escapeOvertimeHtml(row.clockOut || '未打卡') + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderAbnormalRows(rows) {
+  const target = document.getElementById('abnormalList');
+  if (!target) return;
+
+  if (!rows.length) {
+    target.innerHTML =
+      '<div class="admin-empty">' +
+      (adminAbnormalMonthText ? adminAbnormalMonthText + ' ' : '') +
+      '目前沒有符合條件的未打卡異常紀錄。' +
+      '</div>';
+    return;
+  }
+
+  target.innerHTML =
+    (adminAbnormalMonthText ? '<div class="admin-month-chip">' + escapeOvertimeHtml(adminAbnormalMonthText) + ' 未打卡異常</div>' : '') +
+    rows.map(function(row) {
+      return '<div class="admin-card">' +
+        '<div class="admin-card-head">' +
+          '<div>' +
+            '<div class="admin-card-name">' + escapeOvertimeHtml(row.name || '') + '</div>' +
+            '<div class="admin-card-sub">' + escapeOvertimeHtml(row.date || '') + '｜員編 ' + escapeOvertimeHtml(row.employeeNo || '') + '｜' + escapeOvertimeHtml(row.department || '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="admin-badge-row">' +
+          '<span class="admin-badge ' + ((row.clockIn || '') === '未打卡' ? 'missing' : 'ok') + '">上班：' + escapeOvertimeHtml(row.clockIn || '未打卡') + '</span>' +
+          '<span class="admin-badge ' + ((row.clockOut || '') === '未打卡' ? 'missing' : 'ok') + '">下班：' + escapeOvertimeHtml(row.clockOut || '未打卡') + '</span>' +
+        '</div>' +
+        '<div class="admin-reason">異常原因：' + escapeOvertimeHtml(row.reason || '未提供') + '</div>' +
+      '</div>';
+    }).join('');
+}
+
+function normalizeAdminKeyword(value) {
+  return String(value || '').trim().toLowerCase();
 }
     
     function renderPlaceholder(title, text) {
