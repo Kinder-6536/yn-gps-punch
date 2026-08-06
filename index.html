@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -1493,8 +1493,8 @@ function buildRequestEditPanel(item, index) {
         '<label>事由<textarea id="record-edit-reason-' + index + '" rows="3">' + escapeHtml(item.reason || '') + '</textarea></label>' +
       '</div>' +
       '<div class="edit-actions">' +
-        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">儲存修改</button>' +
-        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消</button>' +
+        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">送出申請</button>' +
+        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消修改</button>' +
       '</div>' +
     '</div>';
   }
@@ -1520,8 +1520,8 @@ function buildRequestEditPanel(item, index) {
         '<label>原因<textarea id="record-edit-reason-' + index + '" rows="3">' + escapeHtml(item.reason || '') + '</textarea></label>' +
       '</div>' +
       '<div class="edit-actions">' +
-        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">儲存修改</button>' +
-        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消</button>' +
+        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">送出申請</button>' +
+        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消修改</button>' +
       '</div>' +
     '</div>';
   }
@@ -1902,3 +1902,4 @@ function callApi(apiName, extraParams, callback) {
   </script>
 </body>
 </html>
+
