@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -1374,7 +1374,7 @@ function renderFeedbackPage() {
       const statusText = item.status || '待審核';
       const statusColor = statusText === '已核准'
         ? '#067647'
-        : statusText === '已駁回'
+        : ['已駁回', '駁回', '被駁回', '已退回'].includes(statusText)
           ? '#b42318'
           : '#b54708';
       const timeText = item.requestPeriod || '-';
@@ -1382,7 +1382,7 @@ function renderFeedbackPage() {
       const hoursLine = item.hours
         ? '<div class="card-line">時數：' + escapeHtml(item.hours) + ' 小時</div>'
         : '';
-      const canEdit = ['待審核', '已駁回', '駁回'].includes(statusText);
+      const canEdit = ['待審核', '已駁回', '駁回', '被駁回', '已退回'].includes(statusText);
       const buttonRow = canEdit
         ? '<div class="action-row" style="grid-template-columns:1fr 1fr;">' +
             '<button class="small-btn edit-btn record-edit-btn" data-index="' + index + '">修改內容</button>' +
@@ -1477,7 +1477,7 @@ function cancelRequestRecord(item) {
 }
 
 function buildRequestEditPanel(item, index) {
-  if (!item || !['待審核', '已駁回', '駁回'].includes(item.status)) return '';
+  if (!item || !['待審核', '已駁回', '駁回', '被駁回', '已退回'].includes(item.status)) return '';
 
   if (item.requestKind === 'overtime') {
     return '<div class="edit-panel">' +
