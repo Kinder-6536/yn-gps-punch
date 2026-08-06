@@ -37,6 +37,12 @@
 .approve-btn { background:#06c755; }
 .reject-btn { background:#d92d20; }
 .small-btn { border:0; border-radius:10px; padding:10px; color:#fff; font-size:15px; font-weight:800; }
+.edit-btn { background:#175cd3; }
+.edit-panel { margin-top:12px; padding:12px; border:1px solid #d0d5dd; border-radius:12px; background:#f8fafc; }
+.edit-grid { display:grid; gap:8px; }
+.edit-grid.two-col { grid-template-columns:1fr 1fr; }
+.edit-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.hidden { display:none !important; }
     .late-text { color:#d92d20; font-weight:900; }
     .multi-lang-btn {
   line-height:1.25;
@@ -139,6 +145,7 @@
     let overtimeEmployees = [];
     let overtimeEntrySequence = 0;
     let myRequestRecords = [];
+    let requestEditIndex = -1;
 
     const menus = {
     employee: [
@@ -1340,6 +1347,296 @@ function cancelRequestRecord(item) {
     setStatus(result.message);
 
     if (result.success) {
+      renderFeedbackPage();
+    }
+  });
+}
+
+function renderFeedbackPage() {
+  document.getElementById('panelTitle').textContent = '紀錄查詢';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取你的申請紀錄...</div>';
+  setStatus('');
+
+  callApi('getMyRequestRecords', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('紀錄查詢', result.message);
+      return;
+    }
+
+    myRequestRecords = Array.isArray(result.records) ? result.records : [];
+
+    if (myRequestRecords.length === 0) {
+      renderPlaceholder('紀錄查詢', '目前沒有申請紀錄。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = myRequestRecords.map(function(item, index) {
+      const statusText = item.status || '待審核';
+      const statusColor = statusText === '已核准'
+        ? '#067647'
+        : statusText === '已駁回'
+          ? '#b42318'
+          : '#b54708';
+      const timeText = item.requestPeriod || '-';
+      const reasonText = item.reason || '-';
+      const hoursLine = item.hours
+        ? '<div class="card-line">時數：' + escapeHtml(item.hours) + ' 小時</div>'
+        : '';
+      const canEdit = statusText === '待審核';
+      const buttonRow = canEdit
+        ? '<div class="action-row" style="grid-template-columns:1fr 1fr;">' +
+            '<button class="small-btn edit-btn record-edit-btn" data-index="' + index + '">修改內容</button>' +
+            '<button class="small-btn reject-btn record-cancel-btn" data-index="' + index + '">取消申請</button>' +
+          '</div>'
+        : '';
+      const editPanel = requestEditIndex === index ? buildRequestEditPanel(item, index) : '';
+
+      return '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(item.requestType || '申請紀錄') + '</div>' +
+        '<div class="card-line">日期：' + escapeHtml(item.requestDate || '-') + '</div>' +
+        '<div class="card-line">時間：' + escapeHtml(timeText) + '</div>' +
+        '<div class="card-line">事由：' + escapeHtml(reasonText) + '</div>' +
+        hoursLine +
+        '<div class="card-line">狀態：<span style="font-weight:800;color:' + statusColor + ';">' + escapeHtml(statusText) + '</span></div>' +
+        (item.requestTime ? '<div class="card-line">申請時間：' + escapeHtml(item.requestTime) + '</div>' : '') +
+        buttonRow +
+        editPanel +
+      '</div>';
+    }).join('');
+
+    bindRequestRecordActions();
+    setStatus(result.message);
+  });
+}
+
+function bindRequestRecordActions() {
+  document.querySelectorAll('.record-edit-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const index = Number(button.dataset.index);
+      requestEditIndex = requestEditIndex === index ? -1 : index;
+      renderFeedbackPage();
+    });
+  });
+
+  document.querySelectorAll('.record-cancel-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const index = Number(button.dataset.index);
+      const item = myRequestRecords[index];
+
+      if (!item) {
+        setStatus('找不到這筆申請資料。');
+        return;
+      }
+
+      if (!confirm('確定要取消這筆申請嗎？取消後會刪除這筆待審核資料。')) return;
+      cancelRequestRecord(item);
+    });
+  });
+
+  document.querySelectorAll('.record-edit-close-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      requestEditIndex = -1;
+      renderFeedbackPage();
+    });
+  });
+
+  document.querySelectorAll('.record-save-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      saveRequestEdit(Number(button.dataset.index));
+    });
+  });
+
+  document.querySelectorAll('.record-edit-punch-type').forEach(function(select) {
+    select.addEventListener('change', function() {
+      syncMakeupEditTimeInputs(Number(select.dataset.index));
+    });
+  });
+
+  if (requestEditIndex >= 0) {
+    syncMakeupEditTimeInputs(requestEditIndex);
+  }
+}
+
+function cancelRequestRecord(item) {
+  const params = {
+    requestKind: item.requestKind || '',
+    requestId: item.requestId || '',
+    requestTime: item.requestTime || '',
+    requestDate: item.requestDate || '',
+    requestPeriod: item.requestPeriod || ''
+  };
+
+  callApi('cancelMyRequest', params, function(result) {
+    setStatus(result.message);
+
+    if (result.success) {
+      requestEditIndex = -1;
+      renderFeedbackPage();
+    }
+  });
+}
+
+function buildRequestEditPanel(item, index) {
+  if (!item || item.status !== '待審核') return '';
+
+  if (item.requestKind === 'overtime') {
+    return '<div class="edit-panel">' +
+      '<div class="card-title" style="font-size:18px;">修改加班申請</div>' +
+      '<div class="edit-grid">' +
+        '<label>加班日期<input id="record-edit-date-' + index + '" type="date" value="' + escapeHtml(formatInputDateValue(item.requestDate)) + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid two-col">' +
+        '<label>開始時間<input id="record-edit-start-' + index + '" type="time" value="' + escapeHtml(item.startTime || '') + '"></label>' +
+        '<label>結束時間<input id="record-edit-end-' + index + '" type="time" value="' + escapeHtml(item.endTime || '') + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid">' +
+        '<label>事由<textarea id="record-edit-reason-' + index + '" rows="3">' + escapeHtml(item.reason || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="edit-actions">' +
+        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">儲存修改</button>' +
+        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  if (item.requestKind === 'makeup') {
+    const punchType = normalizePunchTypeForEdit_(item.punchType);
+
+    return '<div class="edit-panel">' +
+      '<div class="card-title" style="font-size:18px;">修改補卡申請</div>' +
+      '<div class="edit-grid">' +
+        '<label>補卡日期<input id="record-edit-date-' + index + '" type="date" value="' + escapeHtml(formatInputDateValue(item.requestDate)) + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid">' +
+        '<label>補卡類型<select id="record-edit-punch-type-' + index + '" class="record-edit-punch-type" data-index="' + index + '">' +
+          buildPunchTypeOptionHtml(punchType) +
+        '</select></label>' +
+      '</div>' +
+      '<div class="edit-grid two-col">' +
+        '<label id="record-edit-clockin-wrap-' + index + '">上班時間<input id="record-edit-clockin-' + index + '" type="time" value="' + escapeHtml(item.clockInTime || '') + '"></label>' +
+        '<label id="record-edit-clockout-wrap-' + index + '">下班時間<input id="record-edit-clockout-' + index + '" type="time" value="' + escapeHtml(item.clockOutTime || '') + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid">' +
+        '<label>原因<textarea id="record-edit-reason-' + index + '" rows="3">' + escapeHtml(item.reason || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="edit-actions">' +
+        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">儲存修改</button>' +
+        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  return '';
+}
+
+function buildPunchTypeOptionHtml(selectedValue) {
+  return [
+    ['上班', '上班'],
+    ['下班', '下班'],
+    ['上下班', '上班 + 下班']
+  ].map(function(option) {
+    return '<option value="' + option[0] + '"' + (selectedValue === option[0] ? ' selected' : '') + '>' + option[1] + '</option>';
+  }).join('');
+}
+
+function normalizePunchTypeForEdit_(value) {
+  const text = String(value || '').trim();
+  if (text === '上班 + 下班' || text === '上下班') return '上下班';
+  if (text === '下班') return '下班';
+  return '上班';
+}
+
+function formatInputDateValue(text) {
+  return String(text || '').trim().replace(/\//g, '-');
+}
+
+function syncMakeupEditTimeInputs(index) {
+  const typeEl = document.getElementById('record-edit-punch-type-' + index);
+  const clockInWrap = document.getElementById('record-edit-clockin-wrap-' + index);
+  const clockOutWrap = document.getElementById('record-edit-clockout-wrap-' + index);
+  if (!typeEl || !clockInWrap || !clockOutWrap) return;
+
+  const punchType = typeEl.value;
+  const showClockIn = punchType === '上班' || punchType === '上下班';
+  const showClockOut = punchType === '下班' || punchType === '上下班';
+
+  clockInWrap.classList.toggle('hidden', !showClockIn);
+  clockOutWrap.classList.toggle('hidden', !showClockOut);
+}
+
+function saveRequestEdit(index) {
+  const item = myRequestRecords[index];
+  if (!item) {
+    setStatus('找不到這筆申請資料。');
+    return;
+  }
+
+  const requestDate = (document.getElementById('record-edit-date-' + index)?.value || '').trim();
+  const reason = (document.getElementById('record-edit-reason-' + index)?.value || '').trim();
+
+  if (!requestDate) {
+    setStatus('請先填寫日期。');
+    return;
+  }
+
+  if (!reason) {
+    setStatus('請先填寫事由。');
+    return;
+  }
+
+  const params = {
+    requestKind: item.requestKind || '',
+    requestId: item.requestId || '',
+    requestTime: item.requestTime || '',
+    originalRequestDate: item.requestDate || '',
+    originalRequestPeriod: item.requestPeriod || '',
+    requestDate: requestDate,
+    reason: reason
+  };
+
+  if (item.requestKind === 'overtime') {
+    const startTime = (document.getElementById('record-edit-start-' + index)?.value || '').trim();
+    const endTime = (document.getElementById('record-edit-end-' + index)?.value || '').trim();
+
+    if (!startTime || !endTime) {
+      setStatus('請完整填寫加班開始與結束時間。');
+      return;
+    }
+
+    params.startTime = startTime;
+    params.endTime = endTime;
+  } else if (item.requestKind === 'makeup') {
+    const punchType = (document.getElementById('record-edit-punch-type-' + index)?.value || '').trim();
+    const clockInTime = (document.getElementById('record-edit-clockin-' + index)?.value || '').trim();
+    const clockOutTime = (document.getElementById('record-edit-clockout-' + index)?.value || '').trim();
+
+    if (!punchType) {
+      setStatus('請選擇補卡類型。');
+      return;
+    }
+
+    if ((punchType === '上班' || punchType === '上下班') && !clockInTime) {
+      setStatus('請填寫上班時間。');
+      return;
+    }
+
+    if ((punchType === '下班' || punchType === '上下班') && !clockOutTime) {
+      setStatus('請填寫下班時間。');
+      return;
+    }
+
+    params.punchType = punchType;
+    params.clockInTime = clockInTime;
+    params.clockOutTime = clockOutTime;
+  } else {
+    setStatus('這筆申請目前不支援修改。');
+    return;
+  }
+
+  callApi('updateMyRequest', params, function(result) {
+    setStatus(result.message);
+    if (result.success) {
+      requestEditIndex = -1;
       renderFeedbackPage();
     }
   });
