@@ -138,6 +138,7 @@
     let overtimeApplicant = null;
     let overtimeEmployees = [];
     let overtimeEntrySequence = 0;
+    let myRequestRecords = [];
 
     const menus = {
     employee: [
@@ -148,7 +149,7 @@
   ['abnormalEmployee', '異常出勤'],
   ['report', '出勤紀錄'],
   ['overtime', '本月時數'],
-  ['feedback', '意見反饋']
+  ['feedback', '紀錄查詢']
 ],
   admin: [
   ['recentAbnormal', '近期異常'],
@@ -326,157 +327,24 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 
 function getDailyQuote() {
   const quotes = [
-    '說得很好，下次別說了。',
-'我知道你很急，但你先別急。',
-'錢不是問題，問題是沒錢。',
-'讓你睡一下午覺，不是讓你睡一下午覺。',
-'客人都來光顧了，你還光顧著看手機。',
-'你這麼說，我就知道你說了。',
-'這件事成功的前提，是先成功。',
-'有問題就解決問題，沒問題就不要製造問題。',
-'事情沒有想像中那麼簡單，也沒有那麼複雜。',
-'人不能沒有夢想，不然晚上睡什麼。',
-'失敗是成功之母，但我媽不是失敗。',
-'你不努力，就沒有努力過。',
-'有空記得抽空。',
-'明天的事情，交給明天的自己。',
-'人生沒有如果，只有如果有。',
-'你以為你以為的，就是你以為的。',
-'時間會證明一切，只要有時間。',
-'不是我不會，是我還沒會。',
-'不要怕失敗，反正你已經失敗了。',
-'有志者事竟成，沒志者睡到自然醒。',
-'天無絕人之路，除非迷路。',
-'越努力，越知道努力沒那麼簡單。',
-'做人要低調，高調也可以。',
-'今天很忙，忙著今天。',
-'工作不會自己做，除非有人做。',
-'做人不要太過分，適當過分就好。',
-'先不要急著放棄，可以等等再放棄。',
-'只要開始，就代表已經開始了。',
-'有開始，就有開始。',
-'今天不上班，今天就不用上班。',
-'能解決的都不是問題，不能解決的才是。',
-'人生最重要的是活著。',
-'你說得有道理，道理也這麼說。',
-'沒有消息，就是還沒有消息。',
-'不要一直滑手機，要換手滑。',
-'別站著發呆，可以坐著發呆。',
-'睡覺是為了醒來。',
-'醒著不一定清醒。',
-'飯可以晚點吃，但還是要吃。',
-'今天沒下雨，就是今天沒下雨。',
-'不要浪費時間，留著慢慢浪費。',
-'有些事情，不做就不用做。',
-'越解釋，代表越有在解釋。',
-'只要你肯努力，就會很努力。',
-'你不尷尬，尷尬的就是別人。',
-'成功的人都有共同點，就是成功。',
-'失敗的人也有共同點，就是失敗。',
-'早睡早起，晚睡晚起。',
-'有空來找我，沒空就有空再來。',
-'別想太多，想少一點。',
-'沒有最累，只有更累。',
-'今天的我，比昨天多活一天。',
-'吃飽才有力氣繼續餓。',
-'努力存錢，才能花錢。',
-'休息是為了繼續休息。',
-'如果有如果，那就有如果。',
-'事情總會解決，不然就是接受。',
-'笑一笑，嘴巴會打開。',
-'不要一直看時間，時間會一直走。',
-'今天先這樣，明天也是明天。',
-'有目標很好，有沒有做到再說。',
-'沒有人是完美的，我也不是。',
-'做人不要比較，比較就會比較。',
-'有時候沉默，是因為沒話講。',
-'先完成，再完成。',
-'會就是會，不會就是還不會。',
-'肚子餓就吃，不餓也可以吃。',
-'該睡就睡，不該睡也想睡。',
-'你今天有來，代表你今天有來。',
-'天氣熱，就是因為熱。',
-'冷就是因為不熱。',
-'不要拖延，可以晚點再拖。',
-'今天不努力，今天就不用努力。',
-'有能力的人，都有能力。',
-'凡事都有第一次，第二次也是。',
-'不要一直摸魚，偶爾換邊摸。',
-'事情做到一半，就做到一半了。',
-'有空就休息，沒空也想休息。',
-'你笑起來很好笑。',
-'沒有最好，只有比較好。',
-'今天過完就是昨天。',
-'不要害怕未來，未來還沒來。',
-'事情沒那麼糟，可能更糟。',
-'不要想著一步登天，可以搭電梯。',
-'先吃飯，再想要不要吃飯。',
-'客人不是不來，只是還沒來。',
-'有在做事的人，都有做事。',
-'站久了可以坐，坐久了可以躺。',
-'你遲到了，但還是有到。',
-'有些事情急也沒用，不急更沒用。',
-'今天心情不好，明天再不好。',
-'如果今天很累，那今天就是很累。',
-'不是所有努力都有結果，但都有過程。',
-'有問題歡迎提出，我不一定回答。',
-'上班很快樂，快不快另說。',
-'事情不是沒有進度，是進度很有自己的進度。',
-'客人沒有消失，只是暫時不見。',
-'今天先做今天的事，不然就變明天的事。',
-'做人要有原則，原則就是看情況。',
-'不要一直偷懶，偶爾光明正大。',
-'如果事情很順利，那可能還沒開始。',
-    '不要把今天的事留到今天晚上。',
-'與其原地踏步，不如先站穩。',
-'有些事情急不得，因為本來就來不及。',
-'做人可以沒夢想，但不能沒睡飽。',
-'有問題不可怕，可怕的是有很多問題。',
-'只要你不放棄，就還沒放棄。',
-'今天沒靈感，代表今天沒有靈感。',
-'不要一直低頭，也要記得抬頭繼續低頭。',
-'不是每件事都有結果，有些只有經過。',
-'別人成功有原因，你成功也會有。',
-'如果事情能重來，它就重來了。',
-'只要還沒下班，就還在上班。',
-'有的人贏在起跑點，有的人還沒起跑。',
-'今天的效率，決定今天的效率。',
-'不要浪費青春，可以浪費中年。',
-'世界不會等你，但鬧鐘會。',
-'你以為很簡單，其實真的不難。',
-'沒有方向的時候，先不要亂轉。',
-'今天不努力，今天就不會努力。',
-'成功沒有捷徑，迷路倒是很快。',
-'如果答案很明顯，那就很明顯。',
-'事情沒有變簡單，只是你習慣了。',
-'不要一直想放棄，可以先想想。',
-'今天的太陽，是今天升起的。',
-'只要肯開始，就已經開始了。',
-'做人要有目標，不然容易看到別人的目標。',
-'今天沒進步，也沒有退到昨天。',
-'有時候運氣不好，只是運氣不好。',
-'不是每個問題都有解，但都有問題。',
-'與其擔心未來，不如先擔心現在。',
-'今天過得很快，因為今天只有一天。',
-'做人最重要的是做人。',
-'不要一直看別人，也看看自己。',
-'事情做到最後，就會做到最後。',
-'有空再想，沒空就先不要想。',
-'每個選擇都是選擇。',
-'今天沒有奇蹟，至少還有今天。',
-'先不要下結論，可以先下班。',
-'今天的晚餐，就是今天晚上吃的那餐。',
-'只要還有希望，就代表還有希望。',
-'不要怕丟臉，臉本來就在。',
-'事情不一定順利，但一定會發生。',
-'如果現在很忙，那就是現在很忙。',
-'有開始的人，不一定有結束。',
-'不要一直抱怨，可以換個地方抱怨。',
-'人生沒有白吃的午餐，但有吃過的午餐。',
-'先別急著成功，可以先成功再急。',
-'有些人很幸運，幸運的人也是。',
-'今天不是昨天，也還不是明天。',
-'如果真的沒辦法，那就真的沒辦法。'
+    '今天也辛苦了，穩穩完成一件事，就是很好的前進。',
+    '每一天的辛苦，都是值得的，繼續加油，你很好！',
+    '認真做好每個細節，成果自然會出現。',
+    '把今天做到最好，就是對未來最大的投資。',
+    '認真工作的你，值得被好好肯定。',
+    '小小的努力，累積久了也會變成很大的力量。',
+    '今天保持平安、順利、心情穩定，就是很棒的一天。',
+    '你現在的付出，未來都會回報給你。',
+    '成功的人不是不累，而是不輕易放棄。',
+    '每個偉大的成果，都來自微小的開始。',
+    '今天多一通電話，明天多一個機會。',
+    '用熱情感染客戶，用專業贏得信任。',
+    '新的一天，新的開始，全力以赴。',
+    '今天的汗水，終將變成明天的掌聲。',
+    '任何時候開始努力都不嫌晚。',
+    '機會總是留給準備好的人。',
+    '努力不一定最快成功，但一定最踏實。',
+    '不需要完美，只要比昨天更踏實一點。'
   ];
 
   const index = new Date().getDate() % quotes.length;
@@ -1392,61 +1260,98 @@ function loadApiMessage(apiName) {
 }
 
 function renderFeedbackPage() {
-  document.getElementById('panelTitle').textContent = '意見反饋';
-  document.getElementById('content').innerHTML =
-    '<label>類型</label>' +
-    '<select id="feedbackType" class="input">' +
-      '<option value="一般意見">一般意見</option>' +
-      '<option value="系統問題">系統問題</option>' +
-      '<option value="功能建議">功能建議</option>' +
-      '<option value="其他">其他</option>' +
-    '</select>' +
-    '<label>內容</label>' +
-    '<textarea id="feedbackContent" class="input" rows="5" placeholder="請輸入想反饋的內容"></textarea>' +
-    '<button class="main-btn primary" onclick="submitFeedback()">送出</button>';
-
+  document.getElementById('panelTitle').textContent = '紀錄查詢';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取你的申請紀錄...</div>';
   setStatus('');
+
+  callApi('getMyRequestRecords', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('紀錄查詢', result.message);
+      return;
+    }
+
+    myRequestRecords = Array.isArray(result.records) ? result.records : [];
+
+    if (myRequestRecords.length === 0) {
+      renderPlaceholder('紀錄查詢', '目前沒有申請紀錄。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = myRequestRecords.map(function(item, index) {
+      const statusColor = item.status === '已核准'
+        ? '#067647'
+        : item.status === '被駁回'
+          ? '#b42318'
+          : '#b54708';
+
+      const timeText = item.requestPeriod || '未填';
+      const reasonText = item.reason || '未填';
+      const hoursLine = item.hours ? '<div class="card-line">時數：' + escapeHtml(item.hours) + ' 小時</div>' : '';
+      const cancelButton = item.status === '待審核'
+        ? '<button class="small-btn reject-btn record-cancel-btn" data-index="' + index + '">取消申請</button>'
+        : '';
+
+      return '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(item.requestType || '申請紀錄') + '</div>' +
+        '<div class="card-line">日期：' + escapeHtml(item.requestDate || '未填') + '</div>' +
+        '<div class="card-line">時間：' + escapeHtml(timeText) + '</div>' +
+        '<div class="card-line">事由：' + escapeHtml(reasonText) + '</div>' +
+        hoursLine +
+        '<div class="card-line">狀態：<span style="font-weight:800;color:' + statusColor + ';">' + escapeHtml(item.status || '待審核') + '</span></div>' +
+        (item.requestTime ? '<div class="card-line">申請時間：' + escapeHtml(item.requestTime) + '</div>' : '') +
+        (cancelButton ? '<div class="action-row" style="grid-template-columns:1fr;">' + cancelButton + '</div>' : '') +
+      '</div>';
+    }).join('');
+
+    bindRequestRecordActions();
+    setStatus(result.message);
+  });
 }
 
-function submitFeedback() {
-  if (!ready) {
-    setStatus('LINE 尚未初始化完成，請稍候。');
-    return;
-  }
+function bindRequestRecordActions() {
+  document.querySelectorAll('.record-cancel-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const index = Number(button.dataset.index);
+      const item = myRequestRecords[index];
 
-  const feedbackType = document.getElementById('feedbackType').value;
-  const content = document.getElementById('feedbackContent').value.trim();
+      if (!item) {
+        setStatus('找不到這筆申請紀錄。');
+        return;
+      }
 
-  if (!content) {
-    setStatus('請輸入意見內容。');
-    return;
-  }
+      const ok = confirm('確定要取消這筆申請嗎？取消後會直接刪除。');
+      if (!ok) return;
 
-  const callbackName = 'jsonpCallback_' + Date.now();
-
-  window[callbackName] = function(result) {
-    setStatus(result.message);
-    delete window[callbackName];
-  };
-
-  const params = new URLSearchParams({
-    api: 'submitFeedback',
-    callback: callbackName,
-    accessToken: accessToken,
-    idToken: idToken,
-    feedbackType: feedbackType,
-    content: content
+      cancelRequestRecord(item);
+    });
   });
+}
 
-  const script = document.createElement('script');
-  script.src = APPS_SCRIPT_URL + '?' + params.toString();
-  script.onerror = function() {
-    setStatus('送出失敗：無法連線到 Apps Script。');
+function cancelRequestRecord(item) {
+  const params = {
+    requestKind: item.requestKind || '',
+    requestId: item.requestId || '',
+    requestTime: item.requestTime || '',
+    requestDate: item.requestDate || '',
+    requestPeriod: item.requestPeriod || ''
   };
 
-  document.body.appendChild(script);
+  callApi('cancelMyRequest', params, function(result) {
+    setStatus(result.message);
 
-  setStatus('正在送出...');
+    if (result.success) {
+      renderFeedbackPage();
+    }
+  });
+}
+
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
     
     function bindPunchButtons() {
