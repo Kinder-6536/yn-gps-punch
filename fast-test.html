@@ -1,0 +1,1950 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>YN 打卡系統</title>
+  <style>
+    body { margin:0; font-family:Arial,"Microsoft JhengHei",sans-serif; background:#f5f7fb; color:#202124; padding-bottom:108px; }
+    .wrap { max-width:430px; margin:0 auto; padding:22px 18px; }
+    .title { font-size:28px; font-weight:800; margin-bottom:10px; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 16px; }
+    .tab { background:#fff; color:#344054; border:1px solid #d0d5dd; border-radius:12px; padding:10px; font-size:16px; font-weight:800; }
+    .tab.active { background:#06c755; color:#fff; border-color:#06c755; }
+    .date { font-size:17px; }
+    .time { font-size:48px; font-weight:800; text-align:center; margin:16px 0 22px; }
+    .panel { background:#fff; border-radius:18px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); min-height:250px; }
+    .panel-title { font-size:21px; font-weight:800; margin-bottom:14px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .main-btn { border:0; border-radius:12px; padding:16px; font-size:20px; font-weight:800; color:white; background:#3273dc; }
+    .main-btn.primary { background:#06c755; }
+    .status { margin-top:16px; white-space:pre-line; line-height:1.55; font-size:15px; color:#344054; }
+    .placeholder { color:#667085; line-height:1.7; font-size:15px; }
+    .bottom-nav { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid #e5e7eb; box-shadow:0 -6px 20px rgba(0,0,0,.08); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(4,1fr); gap:6px; max-width:430px; margin:0 auto; }
+    .nav-item { border:0; background:transparent; color:#344054; padding:8px 2px; border-radius:10px; font-size:12px; font-weight:800; min-height:50px; }
+    .nav-item.active { background:#e9f8ef; color:#087a3b; }
+    button:disabled { background:#aaa; color:#fff; }
+     .form { display:grid; gap:8px; }
+    .form label { font-size:14px; font-weight:800; color:#344054; margin-top:4px; }
+    .input { width:100%; box-sizing:border-box; border:1px solid #d0d5dd; border-radius:10px; padding:11px; font-size:16px; background:#fff; }
+    .textarea { min-height:80px; resize:vertical; }
+    .full-btn { width:100%; margin-top:10px; }
+    .card { border:1px solid #e5e7eb; border-radius:14px; padding:12px; margin-bottom:12px; background:#fff; }
+.card-title { font-weight:800; font-size:17px; margin-bottom:6px; }
+.card-line { font-size:14px; color:#344054; line-height:1.6; }
+.action-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.approve-btn { background:#06c755; }
+.reject-btn { background:#d92d20; }
+.small-btn { border:0; border-radius:10px; padding:10px; color:#fff; font-size:15px; font-weight:800; }
+.edit-btn { background:#175cd3; }
+.edit-panel { margin-top:12px; padding:12px; border:1px solid #d0d5dd; border-radius:12px; background:#f8fafc; }
+.edit-grid { display:grid; gap:8px; }
+.edit-grid.two-col { grid-template-columns:1fr 1fr; }
+.edit-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.hidden { display:none !important; }
+    .late-text { color:#d92d20; font-weight:900; }
+    .multi-lang-btn {
+  line-height:1.25;
+  padding:12px 8px;
+}
+
+.multi-lang-btn span {
+  font-size:13px;
+  font-weight:700;
+  opacity:.95;
+}
+    .daily-quote {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f0f7ff;
+  border: 1px solid #d6e9ff;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+.daily-quote-title {
+  font-weight: 900;
+  color: #1769aa;
+  margin-bottom: 6px;
+}
+
+.main-btn span {
+  font-size: 13px;
+  font-weight: 700;
+}
+    textarea.input {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+    .overtime-applicant { padding:12px; background:#f0f7ff; border:1px solid #d6e9ff; border-radius:8px; line-height:1.6; color:#344054; }
+    .overtime-entry { padding:14px 0; border-top:1px solid #e5e7eb; }
+    .overtime-entry:first-child { border-top:0; padding-top:0; }
+    .overtime-entry-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .overtime-entry-title { font-size:16px; font-weight:800; color:#344054; }
+    .overtime-remove-btn { border:0; background:transparent; color:#d92d20; padding:6px; font-size:14px; font-weight:800; }
+    .overtime-time-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .overtime-time-grid > div { display:grid; gap:8px; }
+    .overtime-hours { color:#1769aa; font-size:14px; font-weight:800; min-height:22px; }
+    .overtime-add-btn { width:100%; border:1px solid #06c755; background:#fff; color:#087a3b; border-radius:10px; padding:12px; font-size:16px; font-weight:800; margin-top:4px; }
+    .admin-toolbar { display:grid; gap:10px; margin-bottom:14px; }
+    .admin-toolbar .toolbar-title { font-size:14px; color:#667085; line-height:1.6; }
+    .admin-filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .admin-list { display:grid; gap:10px; }
+    .admin-card { border:1px solid #e5e7eb; border-radius:14px; padding:12px; background:#fff; }
+    .admin-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .admin-card-name { font-size:17px; font-weight:800; color:#101828; }
+    .admin-card-sub { font-size:13px; color:#667085; line-height:1.5; }
+    .admin-badge-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .admin-badge { display:inline-flex; align-items:center; border-radius:999px; padding:6px 10px; font-size:13px; font-weight:800; background:#eef2ff; color:#344054; }
+    .admin-badge.ok { background:#e9f8ef; color:#087a3b; }
+    .admin-badge.missing { background:#fef3f2; color:#d92d20; }
+    .admin-badge.warn { background:#fff7e6; color:#b54708; }
+    .admin-meta { display:grid; gap:6px; font-size:14px; color:#344054; line-height:1.6; }
+    .admin-reason { margin-top:8px; padding:10px 12px; border-radius:12px; background:#f8fafc; color:#344054; font-size:14px; line-height:1.6; }
+    .admin-empty { border:1px dashed #d0d5dd; border-radius:14px; padding:16px; color:#667085; text-align:center; line-height:1.7; }
+    .admin-month-chip { display:inline-block; margin-bottom:8px; padding:6px 10px; border-radius:999px; background:#f0f7ff; color:#1769aa; font-size:13px; font-weight:800; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">YN 打卡系統</div>
+
+    <div class="tabs">
+      <button class="tab active" id="employeeTab" onclick="switchMode('employee')">員工</button>
+      <button class="tab" id="adminTab" onclick="switchMode('admin')">管理員</button>
+    </div>
+
+    <div class="date" id="dateText"></div>
+    <div class="time" id="timeText">--:--</div>
+
+    <div class="panel">
+      <div class="panel-title" id="panelTitle">我要打卡</div>
+      <div id="content"></div>
+      <div class="status" id="status">正在初始化 LINE 登入...</div>
+    </div>
+  </div>
+
+  <div class="bottom-nav" id="bottomNav"></div>
+
+  <script>
+    const LIFF_ID = '2010401445-uCijQZfw';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-bmhtzpcUPtetf7KbnPZDnehn-TLbvogza9V_a6WZoye1WoPe_okWAFpwzRf_ruxa/exec';
+    const AWS_PUNCH_URL = 'https://3oa6b5iz6e.execute-api.ap-east-2.amazonaws.com/prod/stock-data?route=attendance_fast_punch';
+    const FAST_PUNCH_ENABLED = new URLSearchParams(location.search).get('fast') === '1';
+
+    let accessToken = '';
+    let idToken = '';
+    let ready = false;
+    let currentMode = 'employee';
+    let punchTargets = [];
+    let selectedPunchTargetUserId = '';
+    let punchTargetsLoaded = false;
+    let punchTargetsIsAdmin = false;
+    let overtimeApplicant = null;
+    let overtimeEmployees = [];
+    let overtimeEntrySequence = 0;
+    let myRequestRecords = [];
+    let requestEditIndex = -1;
+    let cachedPunchPosition = null;
+    let cachedPunchPositionAt = 0;
+
+    const menus = {
+    employee: [
+  ['punch', '我要打卡'],
+  ['status', '今日狀態'],
+  ['leave', '加班申請'],
+  ['makeup', '補卡申請'],
+  ['abnormalEmployee', '異常出勤'],
+  ['report', '出勤紀錄'],
+  ['overtime', '本月時數'],
+  ['feedback', '紀錄查詢']
+],
+  admin: [
+  ['recentAbnormal', '近期異常'],
+  ['realtime', '即時出勤'],
+  ['abnormalSearch', '異常查詢'],
+  ['reviewCenter', '審核系統'],
+  ['monthlyHours', '本月時數'],
+  ['reportGenerate', '報表產生'],
+  ['employees', '員工資料'],
+  ['settings', '系統設定']
+]
+};
+
+    window.onerror = function(message, source, lineno) {
+      setStatus('前端錯誤：' + message + '\n行數：' + lineno);
+    };
+    window.onunhandledrejection = function(event) {
+      setStatus('前端錯誤：' + (event.reason && event.reason.message ? event.reason.message : event.reason));
+    };
+    
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('dateText').textContent = now.toLocaleDateString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', weekday:'long' });
+      document.getElementById('timeText').textContent = now.toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit', hour12:false });
+    }
+
+    async function init() {
+      try {
+        renderMenu();
+        renderPunchPage();
+        setStatus('版本：0731-overtime-multi\n正在初始化 LINE 登入...');
+
+setStatus('版本：0731-overtime-multi\n準備初始化 LIFF...');
+
+await liff.init({ liffId: LIFF_ID });
+
+setStatus('LIFF 初始化完成，正在確認登入...');
+
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: window.location.href });
+          return;
+        }
+
+        accessToken = liff.getAccessToken() || '';
+        idToken = liff.getIDToken() || '';
+        ready = true;
+        prefetchPunchLocation();
+
+const autoAction = getActionFromUrl();
+
+if (autoAction) {
+  setStatus('已取得 LINE 資料，正在自動打卡：' + autoAction);
+  setTimeout(function() {
+    punch(autoAction);
+  }, 500);
+  return;
+}
+
+setStatus('已取得 LINE 資料，請選擇功能。');
+
+      } catch (error) {
+        setStatus('LIFF 初始化失敗：' + error.message);
+      }
+    }
+
+    function getActionFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const action = params.get('action');
+
+        const actionMap = {
+        clockin: '上班',
+        clockout: '下班',
+        out: '外出',
+        back: '返回'
+    };
+
+  return actionMap[action] || '';
+}
+
+
+    
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById('employeeTab').classList.toggle('active', mode === 'employee');
+      document.getElementById('adminTab').classList.toggle('active', mode === 'admin');
+      renderMenu();
+      showPage(menus[mode][0][0]);
+    }
+
+    function renderMenu() {
+      const nav = document.getElementById('bottomNav');
+      nav.innerHTML = menus[currentMode].map(function(item, index) {
+        return '<button class="nav-item ' + (index === 0 ? 'active' : '') + '" data-page="' + item[0] + '">' + item[1] + '</button>';
+      }).join('');
+
+      document.querySelectorAll('.nav-item').forEach(function(button) {
+        button.addEventListener('click', function() {
+          document.querySelectorAll('.nav-item').forEach(function(item) { item.classList.remove('active'); });
+          button.classList.add('active');
+          showPage(button.dataset.page);
+        });
+      });
+    }
+
+    function showPage(page) {
+  if (page === 'punch') return renderPunchPage();
+  if (page === 'recentAbnormal') return renderRecentAbnormalPage();
+  if (page === 'realtime') return renderRealtimePage();
+  if (page === 'leave') return renderOvertimeApplicationPage();
+  if (page === 'leaveReview') return renderOvertimeReviewPage();
+  if (page === 'reviewCenter') return renderReviewCenterPage();
+  if (page === 'monthlyHours') return renderMonthlyHoursPage();
+  if (page === 'status') return renderApiMessagePage('今日狀態', 'getTodayStatus');
+  if (page === 'abnormalEmployee') return renderEmployeeAbnormalMonthPage();
+  if (page === 'report') return renderApiMessagePage('出勤紀錄', 'getRecentPunchRecords');
+  if (page === 'feedback') return renderFeedbackPage();
+  if (page === 'makeup') return renderMakeupPunchPage();
+  if (page === 'overtime') return renderEmployeeMonthlyHoursPage();
+      
+      
+  const titles = {
+    todayStatus: '今日狀態',
+    myAbnormal: '異常出勤',
+    records: '出勤紀錄',
+    overtime: '加班統計',
+    more: '更多功能',
+
+    recentAbnormal: '近期異常',
+    realtime: '即時出勤',
+    abnormalSearch: '異常查詢',
+    leaveReview: '加班審核',
+    makeupReview: '補卡審核',
+    reportGenerate: '報表產生',
+    employees: '員工資料',
+    settings: '系統設定'
+  };
+
+  const descriptions = {
+    todayStatus: '這裡之後會顯示今天上班、下班、外出、返回的打卡時間。',
+    myAbnormal: '這裡之後會顯示你的本月異常出勤紀錄。',
+    records: '這裡之後會顯示最近 10 筆打卡紀錄。',
+    overtime: '這裡之後會顯示本月加班分鐘與加班時數。',
+    more: '更多功能可以先保留，之後放薪資查詢、假別餘額或公告。',
+
+    recentAbnormal: '這裡之後會顯示最近 3 天的異常出勤。',
+    realtime: '這裡之後會顯示今天誰已上班、誰尚未上班、誰尚未下班。',
+    abnormalSearch: '這裡之後可以選日期區間查詢異常出勤報表。',
+    leaveReview: '這裡之後會顯示待審核請假申請。',
+    makeupReview: '這裡之後會顯示待審核補卡申請。',
+    reportGenerate: '這裡之後可以選月份或日期區間產生出勤報表。',
+    employees: '這裡之後會顯示員工名單與在職狀態。',
+    settings: '這裡之後可以管理管理員、打卡地點、行事曆設定。'
+  };
+
+  renderPlaceholder(titles[page] || '功能', descriptions[page] || '這個功能頁已建立。');
+}
+
+    function renderPunchPage() {
+  document.getElementById('panelTitle').textContent = '我要打卡';
+
+  document.getElementById('content').innerHTML =
+  '<div id="punchIdentityArea"></div>' +
+  '<div>請選擇打卡動作</div>' +
+  '<div class="grid">' +
+    '<button class="main-btn primary punch-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
+    '<button class="main-btn punch-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
+  '</div>' +
+  '<div class="daily-quote">' +
+    '<div class="daily-quote-title">今日小語</div>' +
+    '<div id="dailyQuoteText">' + getDailyQuote() + '</div>' +
+  '</div>';
+      
+  loadPunchTargets();
+  bindPunchButtons();
+}
+
+function getDailyQuote() {
+  const quotes = [
+    '今天也辛苦了，穩穩完成一件事，就是很好的前進。',
+    '每一天的辛苦，都是值得的，繼續加油，你很好！',
+    '認真做好每個細節，成果自然會出現。',
+    '把今天做到最好，就是對未來最大的投資。',
+    '認真工作的你，值得被好好肯定。',
+    '小小的努力，累積久了也會變成很大的力量。',
+    '今天保持平安、順利、心情穩定，就是很棒的一天。',
+    '你現在的付出，未來都會回報給你。',
+    '成功的人不是不累，而是不輕易放棄。',
+    '每個偉大的成果，都來自微小的開始。',
+    '今天多一通電話，明天多一個機會。',
+    '用熱情感染客戶，用專業贏得信任。',
+    '新的一天，新的開始，全力以赴。',
+    '今天的汗水，終將變成明天的掌聲。',
+    '任何時候開始努力都不嫌晚。',
+    '機會總是留給準備好的人。',
+    '努力不一定最快成功，但一定最踏實。',
+    '不需要完美，只要比昨天更踏實一點。'
+  ];
+
+  const index = new Date().getDate() % quotes.length;
+  return quotes[index];
+}
+    
+function loadPunchTargets() {
+  const area = document.getElementById('punchIdentityArea');
+
+  if (!ready) {
+    area.innerHTML = '';
+    return;
+  }
+
+  if (punchTargetsLoaded) {
+    renderPunchIdentityArea();
+    return;
+  }
+
+  area.innerHTML = '<div class="placeholder">正在讀取打卡身分...</div>';
+
+  callApi('getPunchTargets', {}, function(result) {
+    punchTargetsLoaded = true;
+    punchTargetsIsAdmin = !!result.isAdmin;
+
+    if (!result.success || !result.isAdmin) {
+      area.innerHTML = '';
+      selectedPunchTargetUserId = '';
+      return;
+    }
+
+    punchTargets = result.targets || [];
+    selectedPunchTargetUserId = result.currentUserId || '';
+
+    renderPunchIdentityArea();
+  });
+}
+
+function renderPunchIdentityArea() {
+  const area = document.getElementById('punchIdentityArea');
+
+  if (!punchTargetsIsAdmin || punchTargets.length === 0) {
+    area.innerHTML = '';
+    return;
+  }
+
+  area.innerHTML =
+    '<div class="form" style="margin-bottom:12px;">' +
+      '<label>打卡身分</label>' +
+      '<select id="punchTargetSelect" class="input" onchange="selectedPunchTargetUserId=this.value">' +
+        punchTargets.map(function(item) {
+          const selected = item.userId === selectedPunchTargetUserId ? ' selected' : '';
+          return '<option value="' + item.userId + '"' + selected + '>' +
+            item.name + '｜' + item.employeeNo + '｜' + item.department +
+          '</option>';
+        }).join('') +
+      '</select>' +
+    '</div>';
+}
+    
+      function renderOvertimeApplicationPage() {
+  document.getElementById('panelTitle').textContent = '加班申請';
+  document.getElementById('content').innerHTML =
+    '<div class="form">' +
+      '<div id="overtimeApplicant" class="overtime-applicant">正在讀取申請人與員工資料...</div>' +
+      '<div id="overtimeEntries"></div>' +
+      '<button type="button" class="overtime-add-btn" onclick="addOvertimeEntry()">＋ 新增一筆</button>' +
+      '<button type="button" class="main-btn primary full-btn" onclick="submitOvertimeApplications()">送出加班申請</button>' +
+    '</div>';
+
+  overtimeApplicant = null;
+  overtimeEmployees = [];
+  overtimeEntrySequence = 0;
+  setStatus('正在讀取加班申請資料...');
+
+  callApi('getOvertimeFormData', {}, function(result) {
+    if (!result.success) {
+      setStatus(result.message);
+      return;
+    }
+
+    overtimeApplicant = result.applicant || null;
+    overtimeEmployees = result.employees || [];
+
+    if (!overtimeApplicant || overtimeEmployees.length === 0) {
+      setStatus('找不到可使用的員工資料。');
+      return;
+    }
+
+    document.getElementById('overtimeApplicant').innerHTML =
+      '<strong>申請人：</strong>' +
+      escapeOvertimeHtml(overtimeApplicant.name) +
+      '（' + escapeOvertimeHtml(overtimeApplicant.employeeNo) + '）' +
+      '<br><span>可替自己或其他員工申請。</span>';
+
+    addOvertimeEntry({
+      employeeNo: overtimeApplicant.employeeNo,
+      overtimeDate: getTodayInputValue()
+    });
+    setStatus('請填寫加班資料，可一次新增多筆。');
+  });
+}
+
+function addOvertimeEntry(initialValues) {
+  const container = document.getElementById('overtimeEntries');
+
+  if (!container || overtimeEmployees.length === 0) {
+    setStatus('員工資料尚未讀取完成，請稍候。');
+    return;
+  }
+
+  if (container.querySelectorAll('.overtime-entry').length >= 10) {
+    setStatus('一次最多可新增 10 筆加班申請。');
+    return;
+  }
+
+  const values = initialValues || {};
+  const entryId = ++overtimeEntrySequence;
+  const selectedEmployeeNo = values.employeeNo || overtimeApplicant.employeeNo;
+  const options = overtimeEmployees.map(function(employee) {
+    const selected = employee.employeeNo === selectedEmployeeNo ? ' selected' : '';
+    return '<option value="' + escapeOvertimeHtml(employee.employeeNo) + '"' + selected + '>' +
+      escapeOvertimeHtml(employee.name) + '｜' +
+      escapeOvertimeHtml(employee.employeeNo) + '｜' +
+      escapeOvertimeHtml(employee.department) +
+    '</option>';
+  }).join('');
+
+  container.insertAdjacentHTML('beforeend',
+    '<section class="overtime-entry" data-entry-id="' + entryId + '">' +
+      '<div class="overtime-entry-header">' +
+        '<div class="overtime-entry-title">加班資料</div>' +
+        '<button type="button" class="overtime-remove-btn" onclick="removeOvertimeEntry(' + entryId + ')">移除</button>' +
+      '</div>' +
+      '<div class="form">' +
+        '<label>加班人員</label>' +
+        '<select class="input overtime-employee">' + options + '</select>' +
+        '<label>申請加班日期</label>' +
+        '<input class="input overtime-date" type="date" value="' +
+          escapeOvertimeHtml(values.overtimeDate || getTodayInputValue()) + '">' +
+        '<label>申請加班區間</label>' +
+        '<div class="overtime-time-grid">' +
+          '<div><label>開始時間</label><input class="input overtime-start" type="time" onchange="updateOvertimeHours(' + entryId + ')"></div>' +
+          '<div><label>結束時間</label><input class="input overtime-end" type="time" onchange="updateOvertimeHours(' + entryId + ')"></div>' +
+        '</div>' +
+        '<div class="overtime-hours">時數：請選擇時間</div>' +
+        '<label>事由</label>' +
+        '<textarea class="input textarea overtime-reason" placeholder="請輸入加班事由"></textarea>' +
+      '</div>' +
+    '</section>'
+  );
+
+  renumberOvertimeEntries();
+}
+
+function removeOvertimeEntry(entryId) {
+  const container = document.getElementById('overtimeEntries');
+  const entries = container ? container.querySelectorAll('.overtime-entry') : [];
+
+  if (entries.length <= 1) {
+    setStatus('至少需要保留一筆加班申請。');
+    return;
+  }
+
+  const entry = container.querySelector('[data-entry-id="' + entryId + '"]');
+
+  if (entry) {
+    entry.remove();
+    renumberOvertimeEntries();
+  }
+}
+
+function renumberOvertimeEntries() {
+  const entries = document.querySelectorAll('#overtimeEntries .overtime-entry');
+
+  entries.forEach(function(entry, index) {
+    entry.querySelector('.overtime-entry-title').textContent = '第 ' + (index + 1) + ' 筆';
+    entry.querySelector('.overtime-remove-btn').style.visibility =
+      entries.length > 1 ? 'visible' : 'hidden';
+  });
+}
+
+function updateOvertimeHours(entryId) {
+  const entry = document.querySelector('[data-entry-id="' + entryId + '"]');
+
+  if (!entry) return;
+
+  const startTime = entry.querySelector('.overtime-start').value;
+  const endTime = entry.querySelector('.overtime-end').value;
+  const output = entry.querySelector('.overtime-hours');
+
+  if (!startTime || !endTime) {
+    output.textContent = '時數：請選擇時間';
+    return;
+  }
+
+  const minutes = overtimeInputToMinutes(endTime) - overtimeInputToMinutes(startTime);
+
+  if (minutes <= 0) {
+    output.textContent = '時數：請確認開始與結束時間';
+    return;
+  }
+
+  output.textContent = '時數：' + (Math.round((minutes / 60) * 100) / 100) + ' 小時';
+}
+
+function submitOvertimeApplications() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const entries = Array.from(document.querySelectorAll('#overtimeEntries .overtime-entry'));
+
+  if (entries.length === 0) {
+    setStatus('請至少新增一筆加班申請。');
+    return;
+  }
+
+  const items = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const item = {
+      employeeNo: entry.querySelector('.overtime-employee').value,
+      overtimeDate: entry.querySelector('.overtime-date').value,
+      startTime: entry.querySelector('.overtime-start').value,
+      endTime: entry.querySelector('.overtime-end').value,
+      reason: entry.querySelector('.overtime-reason').value.trim()
+    };
+
+    if (!item.employeeNo || !item.overtimeDate || !item.startTime || !item.endTime || !item.reason) {
+      setStatus('第 ' + (i + 1) + ' 筆資料尚未填寫完整。');
+      return;
+    }
+
+    if (overtimeInputToMinutes(item.endTime) <= overtimeInputToMinutes(item.startTime)) {
+      setStatus('第 ' + (i + 1) + ' 筆結束時間必須晚於開始時間。');
+      return;
+    }
+
+    items.push(item);
+  }
+
+  setStatus('正在送出加班申請...');
+
+  callApi('submitOvertime', { items: JSON.stringify(items) }, function(result) {
+    setStatus(result.message);
+
+    if (!result.success) {
+      return;
+    }
+
+    const container = document.getElementById('overtimeEntries');
+    container.innerHTML = '';
+    addOvertimeEntry({
+      employeeNo: overtimeApplicant.employeeNo,
+      overtimeDate: getTodayInputValue()
+    });
+  });
+}
+
+function overtimeInputToMinutes(value) {
+  const parts = String(value || '').split(':').map(Number);
+  return parts.length === 2 ? parts[0] * 60 + parts[1] : 0;
+}
+
+function getTodayInputValue() {
+  const now = new Date();
+  return now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+}
+
+function escapeOvertimeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+  
+function renderMakeupPunchPage() {
+  document.getElementById('panelTitle').textContent = '補卡申請';
+
+  document.getElementById('content').innerHTML =
+    '<div class="form">' +
+      '<div id="makeupTargetArea"></div>' +
+
+      '<label>補卡日期</label>' +
+      '<input id="makeupDate" class="input" type="date">' +
+
+      '<label>補卡選項</label>' +
+      '<select id="makeupType" class="input" onchange="updateMakeupTimeFields()">' +
+        '<option value="上班">上班</option>' +
+        '<option value="下班">下班</option>' +
+        '<option value="上班 + 下班">上班 + 下班</option>' +
+      '</select>' +
+
+      '<div id="makeupTimeFields"></div>' +
+
+      '<label>補卡原因</label>' +
+      '<textarea id="makeupReason" class="input" rows="4" placeholder="請輸入補卡原因"></textarea>' +
+
+      '<button class="main-btn primary full-btn" onclick="submitMakeupPunch()">送出補卡申請</button>' +
+    '</div>';
+
+  setStatus('');
+  renderMakeupTargetArea();
+  updateMakeupTimeFields();
+}
+
+function submitMakeupPunch() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const punchDate = document.getElementById('makeupDate').value;
+  const punchType = document.getElementById('makeupType').value;
+  const reason = document.getElementById('makeupReason').value.trim();
+
+  const clockInInput = document.getElementById('makeupClockInTime');
+  const clockOutInput = document.getElementById('makeupClockOutTime');
+
+  const clockInTime = clockInInput ? clockInInput.value : '';
+  const clockOutTime = clockOutInput ? clockOutInput.value : '';
+
+  const targetSelect = document.getElementById('makeupTargetUserId');
+  const targetUserId = targetSelect ? targetSelect.value : '';
+
+  if (!punchDate || !punchType || !reason) {
+    setStatus('請完整填寫補卡資料。');
+    return;
+  }
+
+  if ((punchType === '上班' || punchType === '上班 + 下班') && !clockInTime) {
+    setStatus('請填寫上班補卡時間。');
+    return;
+  }
+
+  if ((punchType === '下班' || punchType === '上班 + 下班') && !clockOutTime) {
+    setStatus('請填寫下班補卡時間。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    setStatus(result.message);
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'submitMakeupPunch',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    targetUserId: targetUserId,
+    punchDate: punchDate,
+    punchType: punchType,
+    clockInTime: clockInTime,
+    clockOutTime: clockOutTime,
+    reason: reason
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('送出失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('正在送出補卡申請...');
+}
+
+    
+function updateMakeupTimeFields() {
+  const type = document.getElementById('makeupType').value;
+  let html = '';
+
+  if (type === '上班' || type === '上班 + 下班') {
+    html +=
+      '<label>上班時間</label>' +
+      '<input id="makeupClockInTime" class="input" type="time">';
+  }
+
+  if (type === '下班' || type === '上班 + 下班') {
+    html +=
+      '<label>下班時間</label>' +
+      '<input id="makeupClockOutTime" class="input" type="time">';
+  }
+
+  document.getElementById('makeupTimeFields').innerHTML = html;
+}
+
+function renderMakeupTargetArea() {
+  const area = document.getElementById('makeupTargetArea');
+
+  if (!punchTargetsLoaded || !punchTargetsIsAdmin) {
+    area.innerHTML = '';
+    return;
+  }
+
+  area.innerHTML =
+    '<label>補卡對象</label>' +
+    '<select id="makeupTargetUserId" class="input">' +
+      punchTargets.map(function(employee) {
+        return '<option value="' + employee.userId + '">' +
+          employee.name + '｜' + employee.employeeNo + '｜' + employee.department +
+        '</option>';
+      }).join('') +
+    '</select>';
+}
+
+function renderReviewCenterPage() {
+  document.getElementById('panelTitle').textContent = '審核系統';
+  document.getElementById('content').innerHTML =
+    '<div class="grid">' +
+      '<button class="main-btn primary" onclick="renderOvertimeReviewPage()">加班審核</button>' +
+      '<button class="main-btn" onclick="renderMakeupReviewPage()">補卡審核</button>' +
+    '</div>';
+
+  setStatus('請選擇要審核的申請類型。');
+}
+
+function renderMonthlyHoursPage() {
+  document.getElementById('panelTitle').textContent = '本月時數';
+  document.getElementById('content').innerHTML =
+    '<div class="form">' +
+      '<label>月份</label>' +
+      '<input id="hoursMonth" class="input" type="month">' +
+
+      '<label>員工</label>' +
+      '<select id="hoursEmployee" class="input">' +
+        '<option value="">載入員工中...</option>' +
+      '</select>' +
+
+      '<button class="main-btn primary full-btn" onclick="queryMonthlyHours()">查詢時數</button>' +
+
+      '<div id="monthlyHoursResult" class="placeholder"></div>' +
+    '</div>';
+
+  setStatus('正在載入員工清單...');
+
+  const now = new Date();
+  document.getElementById('hoursMonth').value =
+    now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  callApi('getEmployeeOptions', {}, function(result) {
+    if (!result.success) {
+      setStatus(result.message);
+      return;
+    }
+
+    const select = document.getElementById('hoursEmployee');
+
+    select.innerHTML = result.employees.map(function(employee) {
+      return '<option value="' + employee.employeeNo + '">' +
+        employee.name + '｜' + employee.employeeNo + '｜' + employee.department +
+      '</option>';
+    }).join('');
+
+    setStatus('請選擇月份與員工。');
+  });
+}
+
+  function queryMonthlyHours() {
+  const monthValue = document.getElementById('hoursMonth').value;
+  const employeeNo = document.getElementById('hoursEmployee').value;
+
+  if (!monthValue || !employeeNo) {
+    setStatus('請選擇月份與員工。');
+    return;
+  }
+
+  const month = monthValue.replace('-', '/');
+
+  setStatus('正在查詢本月時數...');
+
+  callApi('getMonthlyHoursSummary', {
+    month: month,
+    employeeNo: employeeNo
+  }, function(result) {
+    if (!result.success) {
+      document.getElementById('monthlyHoursResult').innerHTML = result.message;
+      setStatus('');
+      return;
+    }
+
+    const data = result.data;
+
+const dailyHtml = (data.dailyRecords || []).map(function(item) {
+  const lateClass = isLateClockIn(item.clockIn) ? ' late-text' : '';
+
+  return '<div class="card-line">' +
+    item.date +
+    '　上班 <span class="' + lateClass + '">' + item.clockIn + '</span>' +
+    '　下班 ' + item.clockOut +
+    '　時數 ' + item.hoursText +
+  '</div>';
+}).join('');
+
+document.getElementById('monthlyHoursResult').innerHTML =
+  '<div class="card">' +
+    '<div class="card-title">' + data.month + ' ' + data.name + '</div>' +
+    '<div class="card-line">員工編號：' + data.employeeNo + '</div>' +
+    '<hr>' +
+    dailyHtml +
+    '<hr>' +
+    '<div class="card-line">出勤天數：' + data.workDays + ' 天</div>' +
+    '<div class="card-line">總出勤時數：' + data.totalHours + ' 小時</div>' +
+    '<div class="card-line">加班總分鐘：' + data.overtimeMinutes + ' 分鐘</div>' +
+    '<div class="card-line">加班換算：' + data.overtimeText + '</div>' +
+  '</div>';
+
+    setStatus(result.message);
+  });
+}
+
+function isLateClockIn(timeText) {
+  if (!timeText || timeText === '未打卡') {
+    return false;
+  }
+
+  const parts = timeText.split(':');
+  const minutes = Number(parts[0]) * 60 + Number(parts[1]);
+
+  return minutes >= (8 * 60 + 11);
+}
+
+let adminRealtimeRows = [];
+let adminAbnormalRows = [];
+let adminAbnormalMonthText = '';
+
+function renderRealtimePage() {
+  document.getElementById('panelTitle').textContent = '即時出勤';
+  document.getElementById('content').innerHTML =
+    '<div class="admin-toolbar">' +
+      '<div class="toolbar-title">顯示今天所有在職人員的上班與下班打卡狀態。</div>' +
+      '<div class="admin-filter-grid">' +
+        '<select id="realtimeEmployeeFilter" class="input"></select>' +
+        '<input id="realtimeSearchInput" class="input" placeholder="搜尋姓名、員編、部門">' +
+      '</div>' +
+    '</div>' +
+    '<div id="realtimeList" class="admin-list"></div>';
+
+  setStatus('正在讀取即時出勤...');
+
+  callApi('getAdminTodayAttendance', {}, function(result) {
+    if (!result.success) {
+      document.getElementById('realtimeList').innerHTML = '<div class="admin-empty">' + result.message + '</div>';
+      setStatus(result.message);
+      return;
+    }
+
+    adminRealtimeRows = result.rows || [];
+    buildAdminEmployeeFilter('realtimeEmployeeFilter', adminRealtimeRows);
+    bindAdminRealtimeFilter();
+    applyRealtimeFilter();
+    setStatus('即時出勤已更新，共 ' + adminRealtimeRows.length + ' 位。');
+  });
+}
+
+function renderRecentAbnormalPage() {
+  document.getElementById('panelTitle').textContent = '近期異常';
+  document.getElementById('content').innerHTML =
+    '<div class="admin-toolbar">' +
+      '<div class="toolbar-title">顯示本月有未打卡的異常紀錄，可依人員或關鍵字篩選。</div>' +
+      '<div class="admin-filter-grid">' +
+        '<select id="abnormalEmployeeFilter" class="input"></select>' +
+        '<input id="abnormalSearchInput" class="input" placeholder="搜尋姓名、員編、部門、日期">' +
+      '</div>' +
+    '</div>' +
+    '<div id="abnormalList" class="admin-list"></div>';
+
+  setStatus('正在讀取本月異常...');
+
+  callApi('getAdminMonthlyAbnormal', {}, function(result) {
+    if (!result.success) {
+      document.getElementById('abnormalList').innerHTML = '<div class="admin-empty">' + result.message + '</div>';
+      setStatus(result.message);
+      return;
+    }
+
+    adminAbnormalRows = result.rows || [];
+    adminAbnormalMonthText = result.month || '';
+    buildAdminEmployeeFilter('abnormalEmployeeFilter', adminAbnormalRows);
+    bindAdminAbnormalFilter();
+    applyAbnormalFilter();
+    setStatus('近期異常已更新，共 ' + adminAbnormalRows.length + ' 筆。');
+  });
+}
+
+function buildAdminEmployeeFilter(elementId, rows) {
+  const select = document.getElementById(elementId);
+  if (!select) return;
+
+  const options = ['<option value="">全部人員</option>'];
+  const seen = {};
+
+  rows.forEach(function(row) {
+    const employeeNo = String(row.employeeNo || '').trim();
+    const name = String(row.name || '').trim();
+    const department = String(row.department || '').trim();
+
+    if (!employeeNo || seen[employeeNo]) return;
+    seen[employeeNo] = true;
+
+    options.push(
+      '<option value="' + escapeOvertimeHtml(employeeNo) + '">' +
+      escapeOvertimeHtml(name + '｜' + employeeNo + '｜' + department) +
+      '</option>'
+    );
+  });
+
+  select.innerHTML = options.join('');
+}
+
+function bindAdminRealtimeFilter() {
+  const select = document.getElementById('realtimeEmployeeFilter');
+  const input = document.getElementById('realtimeSearchInput');
+  if (select) select.onchange = applyRealtimeFilter;
+  if (input) input.oninput = applyRealtimeFilter;
+}
+
+function bindAdminAbnormalFilter() {
+  const select = document.getElementById('abnormalEmployeeFilter');
+  const input = document.getElementById('abnormalSearchInput');
+  if (select) select.onchange = applyAbnormalFilter;
+  if (input) input.oninput = applyAbnormalFilter;
+}
+
+function getAdminFilteredRows(rows, employeeValue, keyword) {
+  const normalizedKeyword = normalizeAdminKeyword(keyword);
+
+  return rows.filter(function(row) {
+    const employeeMatched = !employeeValue || String(row.employeeNo || '') === employeeValue;
+
+    if (!employeeMatched) return false;
+
+    if (!normalizedKeyword) return true;
+
+    const haystack = [
+      row.date,
+      row.employeeNo,
+      row.name,
+      row.department,
+      row.clockIn,
+      row.clockOut,
+      row.reason
+    ].join(' ');
+
+    return normalizeAdminKeyword(haystack).indexOf(normalizedKeyword) !== -1;
+  });
+}
+
+function applyRealtimeFilter() {
+  const employeeValue = document.getElementById('realtimeEmployeeFilter') ? document.getElementById('realtimeEmployeeFilter').value : '';
+  const keyword = document.getElementById('realtimeSearchInput') ? document.getElementById('realtimeSearchInput').value : '';
+  const rows = getAdminFilteredRows(adminRealtimeRows, employeeValue, keyword);
+  renderRealtimeRows(rows);
+}
+
+function applyAbnormalFilter() {
+  const employeeValue = document.getElementById('abnormalEmployeeFilter') ? document.getElementById('abnormalEmployeeFilter').value : '';
+  const keyword = document.getElementById('abnormalSearchInput') ? document.getElementById('abnormalSearchInput').value : '';
+  const rows = getAdminFilteredRows(adminAbnormalRows, employeeValue, keyword);
+  renderAbnormalRows(rows);
+}
+
+function renderRealtimeRows(rows) {
+  const target = document.getElementById('realtimeList');
+  if (!target) return;
+
+  if (!rows.length) {
+    target.innerHTML = '<div class="admin-empty">目前沒有符合條件的人員。</div>';
+    return;
+  }
+
+  target.innerHTML = rows.map(function(row) {
+    const hasClockIn = row.clockIn && row.clockIn !== '未打卡';
+    const hasClockOut = row.clockOut && row.clockOut !== '未打卡';
+
+    return '<div class="admin-card">' +
+      '<div class="admin-card-head">' +
+        '<div>' +
+          '<div class="admin-card-name">' + escapeOvertimeHtml(row.name || '') + '</div>' +
+          '<div class="admin-card-sub">員編 ' + escapeOvertimeHtml(row.employeeNo || '') + '｜' + escapeOvertimeHtml(row.department || '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="admin-badge-row">' +
+        '<span class="admin-badge ' + (hasClockIn ? 'ok' : 'missing') + '">上班：' + escapeOvertimeHtml(row.clockIn || '未打卡') + '</span>' +
+        '<span class="admin-badge ' + (hasClockOut ? 'ok' : 'missing') + '">下班：' + escapeOvertimeHtml(row.clockOut || '未打卡') + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderAbnormalRows(rows) {
+  const target = document.getElementById('abnormalList');
+  if (!target) return;
+
+  if (!rows.length) {
+    target.innerHTML =
+      '<div class="admin-empty">' +
+      (adminAbnormalMonthText ? adminAbnormalMonthText + ' ' : '') +
+      '目前沒有符合條件的未打卡異常紀錄。' +
+      '</div>';
+    return;
+  }
+
+  target.innerHTML =
+    (adminAbnormalMonthText ? '<div class="admin-month-chip">' + escapeOvertimeHtml(adminAbnormalMonthText) + ' 未打卡異常</div>' : '') +
+    rows.map(function(row) {
+      return '<div class="admin-card">' +
+        '<div class="admin-card-head">' +
+          '<div>' +
+            '<div class="admin-card-name">' + escapeOvertimeHtml(row.name || '') + '</div>' +
+            '<div class="admin-card-sub">' + escapeOvertimeHtml(row.date || '') + '｜員編 ' + escapeOvertimeHtml(row.employeeNo || '') + '｜' + escapeOvertimeHtml(row.department || '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="admin-badge-row">' +
+          '<span class="admin-badge ' + ((row.clockIn || '') === '未打卡' ? 'missing' : 'ok') + '">上班：' + escapeOvertimeHtml(row.clockIn || '未打卡') + '</span>' +
+          '<span class="admin-badge ' + ((row.clockOut || '') === '未打卡' ? 'missing' : 'ok') + '">下班：' + escapeOvertimeHtml(row.clockOut || '未打卡') + '</span>' +
+        '</div>' +
+        '<div class="admin-reason">異常原因：' + escapeOvertimeHtml(row.reason || '未提供') + '</div>' +
+      '</div>';
+    }).join('');
+}
+
+function normalizeAdminKeyword(value) {
+  return String(value || '').trim().toLowerCase();
+}
+    
+    function renderPlaceholder(title, text) {
+      document.getElementById('panelTitle').textContent = title;
+      document.getElementById('content').innerHTML = '<div class="placeholder">' + text + '</div>';
+      setStatus('');
+    }
+
+    function renderApiMessagePage(title, apiName) {
+  document.getElementById('panelTitle').textContent = title;
+  document.getElementById('content').innerHTML =
+    '<button class="main-btn primary" onclick="loadApiMessage(\'' + apiName + '\')">查詢</button>';
+
+  setStatus('請按查詢。');
+}
+
+function renderEmployeeMonthlyHoursPage() {
+  document.getElementById('panelTitle').textContent = '本月時數';
+
+  const now = new Date();
+  const monthValue = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  document.getElementById('content').innerHTML =
+    '<label>月份</label>' +
+    '<input id="employeeMonthInput" class="input" type="month" value="' + monthValue + '">' +
+    '<button class="main-btn primary full-btn" onclick="queryEmployeeMonthlyHours()">查詢本月時數</button>';
+
+  setStatus('請選擇月份後查詢。');
+}
+
+function queryEmployeeMonthlyHours() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const month = document.getElementById('employeeMonthInput').value;
+
+  if (!month) {
+    setStatus('請選擇月份。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    if (!result.success) {
+      setStatus(result.message);
+      delete window[callbackName];
+      return;
+    }
+
+    const data = result.data;
+
+    const dailyHtml = (data.dailyRecords || []).map(function(item) {
+      return item.date +
+        '　上班 ' + item.clockIn +
+        '　下班 ' + item.clockOut +
+        '　時數 ' + item.hoursText;
+    }).join('\n');
+
+    setStatus(
+      data.month + ' ' + data.name + '\n' +
+      '員工編號：' + data.employeeNo + '\n\n' +
+      dailyHtml + '\n\n' +
+      '出勤天數：' + data.workDays + ' 天\n' +
+      '總出勤時數：' + data.totalHours + ' 小時\n' +
+      '加班總分鐘：' + data.overtimeMinutes + ' 分鐘\n' +
+      '加班換算：' + data.overtimeText
+    );
+
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'getMyMonthlyHoursSummary',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    month: month
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('查詢失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('查詢中...');
+}
+
+function renderEmployeeAbnormalMonthPage() {
+  document.getElementById('panelTitle').textContent = '異常出勤';
+
+  const now = new Date();
+  const monthValue = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+  document.getElementById('content').innerHTML =
+    '<label>月份</label>' +
+    '<input id="employeeAbnormalMonthInput" class="input" type="month" value="' + monthValue + '">' +
+    '<button class="main-btn primary full-btn" onclick="queryEmployeeAbnormalByMonth()">查詢異常</button>';
+
+  setStatus('請選擇月份後查詢。');
+}
+
+function queryEmployeeAbnormalByMonth() {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const month = document.getElementById('employeeAbnormalMonthInput').value;
+
+  if (!month) {
+    setStatus('請選擇月份。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    setStatus(result.message);
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: 'getEmployeeAbnormalByMonth',
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken,
+    month: month
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('查詢失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('查詢中...');
+}
+
+    
+function loadApiMessage(apiName) {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    setStatus(result.message);
+    delete window[callbackName];
+  };
+
+  const params = new URLSearchParams({
+    api: apiName,
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken
+  });
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('查詢失敗：無法連線到 Apps Script。');
+  };
+
+  document.body.appendChild(script);
+
+  setStatus('查詢中...');
+}
+
+function renderFeedbackPage() {
+  document.getElementById('panelTitle').textContent = '紀錄查詢';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取你的申請紀錄...</div>';
+  setStatus('');
+
+  callApi('getMyRequestRecords', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('紀錄查詢', result.message);
+      return;
+    }
+
+    myRequestRecords = Array.isArray(result.records) ? result.records : [];
+
+    if (myRequestRecords.length === 0) {
+      renderPlaceholder('紀錄查詢', '目前沒有申請紀錄。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = myRequestRecords.map(function(item, index) {
+      const statusColor = item.status === '已核准'
+        ? '#067647'
+        : item.status === '被駁回'
+          ? '#b42318'
+          : '#b54708';
+
+      const timeText = item.requestPeriod || '未填';
+      const reasonText = item.reason || '未填';
+      const hoursLine = item.hours ? '<div class="card-line">時數：' + escapeHtml(item.hours) + ' 小時</div>' : '';
+      const cancelButton = item.status === '待審核'
+        ? '<button class="small-btn reject-btn record-cancel-btn" data-index="' + index + '">取消申請</button>'
+        : '';
+
+      return '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(item.requestType || '申請紀錄') + '</div>' +
+        '<div class="card-line">日期：' + escapeHtml(item.requestDate || '未填') + '</div>' +
+        '<div class="card-line">時間：' + escapeHtml(timeText) + '</div>' +
+        '<div class="card-line">事由：' + escapeHtml(reasonText) + '</div>' +
+        hoursLine +
+        '<div class="card-line">狀態：<span style="font-weight:800;color:' + statusColor + ';">' + escapeHtml(item.status || '待審核') + '</span></div>' +
+        (item.requestTime ? '<div class="card-line">申請時間：' + escapeHtml(item.requestTime) + '</div>' : '') +
+        (cancelButton ? '<div class="action-row" style="grid-template-columns:1fr;">' + cancelButton + '</div>' : '') +
+      '</div>';
+    }).join('');
+
+    bindRequestRecordActions();
+    setStatus(result.message);
+  });
+}
+
+function bindRequestRecordActions() {
+  document.querySelectorAll('.record-cancel-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const index = Number(button.dataset.index);
+      const item = myRequestRecords[index];
+
+      if (!item) {
+        setStatus('找不到這筆申請紀錄。');
+        return;
+      }
+
+      const ok = confirm('確定要取消這筆申請嗎？取消後會直接刪除。');
+      if (!ok) return;
+
+      cancelRequestRecord(item);
+    });
+  });
+}
+
+function cancelRequestRecord(item) {
+  const params = {
+    requestKind: item.requestKind || '',
+    requestId: item.requestId || '',
+    requestTime: item.requestTime || '',
+    requestDate: item.requestDate || '',
+    requestPeriod: item.requestPeriod || ''
+  };
+
+  callApi('cancelMyRequest', params, function(result) {
+    setStatus(result.message);
+
+    if (result.success) {
+      renderFeedbackPage();
+    }
+  });
+}
+
+function renderFeedbackPage() {
+  document.getElementById('panelTitle').textContent = '紀錄查詢';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取你的申請紀錄...</div>';
+  setStatus('');
+
+  callApi('getMyRequestRecords', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('紀錄查詢', result.message);
+      return;
+    }
+
+    myRequestRecords = Array.isArray(result.records) ? result.records : [];
+
+    if (myRequestRecords.length === 0) {
+      renderPlaceholder('紀錄查詢', '目前沒有申請紀錄。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = myRequestRecords.map(function(item, index) {
+      const statusText = item.status || '待審核';
+      const statusColor = statusText === '已核准'
+        ? '#067647'
+        : ['已駁回', '駁回', '被駁回', '已退回'].includes(statusText)
+          ? '#b42318'
+          : '#b54708';
+      const timeText = item.requestPeriod || '-';
+      const reasonText = item.reason || '-';
+      const hoursLine = item.hours
+        ? '<div class="card-line">時數：' + escapeHtml(item.hours) + ' 小時</div>'
+        : '';
+      const canEdit = ['待審核', '已駁回', '駁回', '被駁回', '已退回'].includes(statusText);
+      const buttonRow = canEdit
+        ? '<div class="action-row" style="grid-template-columns:1fr 1fr;">' +
+            '<button class="small-btn edit-btn record-edit-btn" data-index="' + index + '">修改內容</button>' +
+            '<button class="small-btn reject-btn record-cancel-btn" data-index="' + index + '">取消申請</button>' +
+          '</div>'
+        : '';
+      const editPanel = requestEditIndex === index ? buildRequestEditPanel(item, index) : '';
+
+      return '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(item.requestType || '申請紀錄') + '</div>' +
+        '<div class="card-line">日期：' + escapeHtml(item.requestDate || '-') + '</div>' +
+        '<div class="card-line">時間：' + escapeHtml(timeText) + '</div>' +
+        '<div class="card-line">事由：' + escapeHtml(reasonText) + '</div>' +
+        hoursLine +
+        '<div class="card-line">狀態：<span style="font-weight:800;color:' + statusColor + ';">' + escapeHtml(statusText) + '</span></div>' +
+        (item.requestTime ? '<div class="card-line">申請時間：' + escapeHtml(item.requestTime) + '</div>' : '') +
+        buttonRow +
+        editPanel +
+      '</div>';
+    }).join('');
+
+    bindRequestRecordActions();
+    setStatus(result.message);
+  });
+}
+
+function bindRequestRecordActions() {
+  document.querySelectorAll('.record-edit-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const index = Number(button.dataset.index);
+      requestEditIndex = requestEditIndex === index ? -1 : index;
+      renderFeedbackPage();
+    });
+  });
+
+  document.querySelectorAll('.record-cancel-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const index = Number(button.dataset.index);
+      const item = myRequestRecords[index];
+
+      if (!item) {
+        setStatus('找不到這筆申請資料。');
+        return;
+      }
+
+      if (!confirm('確定要取消這筆申請嗎？取消後會刪除這筆待審核資料。')) return;
+      cancelRequestRecord(item);
+    });
+  });
+
+  document.querySelectorAll('.record-edit-close-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      requestEditIndex = -1;
+      renderFeedbackPage();
+    });
+  });
+
+  document.querySelectorAll('.record-save-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      saveRequestEdit(Number(button.dataset.index));
+    });
+  });
+
+  document.querySelectorAll('.record-edit-punch-type').forEach(function(select) {
+    select.addEventListener('change', function() {
+      syncMakeupEditTimeInputs(Number(select.dataset.index));
+    });
+  });
+
+  if (requestEditIndex >= 0) {
+    syncMakeupEditTimeInputs(requestEditIndex);
+  }
+}
+
+function cancelRequestRecord(item) {
+  const params = {
+    requestKind: item.requestKind || '',
+    requestId: item.requestId || '',
+    requestTime: item.requestTime || '',
+    requestDate: item.requestDate || '',
+    requestPeriod: item.requestPeriod || ''
+  };
+
+  callApi('cancelMyRequest', params, function(result) {
+    setStatus(result.message);
+
+    if (result.success) {
+      requestEditIndex = -1;
+      renderFeedbackPage();
+    }
+  });
+}
+
+function buildRequestEditPanel(item, index) {
+  if (!item || !['待審核', '已駁回', '駁回', '被駁回', '已退回'].includes(item.status)) return '';
+
+  if (item.requestKind === 'overtime') {
+    return '<div class="edit-panel">' +
+      '<div class="card-title" style="font-size:18px;">修改加班申請</div>' +
+      '<div class="edit-grid">' +
+        '<label>加班日期<input id="record-edit-date-' + index + '" type="date" value="' + escapeHtml(formatInputDateValue(item.requestDate)) + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid two-col">' +
+        '<label>開始時間<input id="record-edit-start-' + index + '" type="time" value="' + escapeHtml(item.startTime || '') + '"></label>' +
+        '<label>結束時間<input id="record-edit-end-' + index + '" type="time" value="' + escapeHtml(item.endTime || '') + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid">' +
+        '<label>事由<textarea id="record-edit-reason-' + index + '" rows="3">' + escapeHtml(item.reason || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="edit-actions">' +
+        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">送出申請</button>' +
+        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消修改</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  if (item.requestKind === 'makeup') {
+    const punchType = normalizePunchTypeForEdit_(item.punchType);
+
+    return '<div class="edit-panel">' +
+      '<div class="card-title" style="font-size:18px;">修改補卡申請</div>' +
+      '<div class="edit-grid">' +
+        '<label>補卡日期<input id="record-edit-date-' + index + '" type="date" value="' + escapeHtml(formatInputDateValue(item.requestDate)) + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid">' +
+        '<label>補卡類型<select id="record-edit-punch-type-' + index + '" class="record-edit-punch-type" data-index="' + index + '">' +
+          buildPunchTypeOptionHtml(punchType) +
+        '</select></label>' +
+      '</div>' +
+      '<div class="edit-grid two-col">' +
+        '<label id="record-edit-clockin-wrap-' + index + '">上班時間<input id="record-edit-clockin-' + index + '" type="time" value="' + escapeHtml(item.clockInTime || '') + '"></label>' +
+        '<label id="record-edit-clockout-wrap-' + index + '">下班時間<input id="record-edit-clockout-' + index + '" type="time" value="' + escapeHtml(item.clockOutTime || '') + '"></label>' +
+      '</div>' +
+      '<div class="edit-grid">' +
+        '<label>原因<textarea id="record-edit-reason-' + index + '" rows="3">' + escapeHtml(item.reason || '') + '</textarea></label>' +
+      '</div>' +
+      '<div class="edit-actions">' +
+        '<button class="small-btn edit-btn record-save-btn" data-index="' + index + '">送出申請</button>' +
+        '<button class="small-btn record-edit-close-btn" data-index="' + index + '">取消修改</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  return '';
+}
+
+function buildPunchTypeOptionHtml(selectedValue) {
+  return [
+    ['上班', '上班'],
+    ['下班', '下班'],
+    ['上下班', '上班 + 下班']
+  ].map(function(option) {
+    return '<option value="' + option[0] + '"' + (selectedValue === option[0] ? ' selected' : '') + '>' + option[1] + '</option>';
+  }).join('');
+}
+
+function normalizePunchTypeForEdit_(value) {
+  const text = String(value || '').trim();
+  if (text === '上班 + 下班' || text === '上下班') return '上下班';
+  if (text === '下班') return '下班';
+  return '上班';
+}
+
+function formatInputDateValue(text) {
+  return String(text || '').trim().replace(/\//g, '-');
+}
+
+function syncMakeupEditTimeInputs(index) {
+  const typeEl = document.getElementById('record-edit-punch-type-' + index);
+  const clockInWrap = document.getElementById('record-edit-clockin-wrap-' + index);
+  const clockOutWrap = document.getElementById('record-edit-clockout-wrap-' + index);
+  if (!typeEl || !clockInWrap || !clockOutWrap) return;
+
+  const punchType = typeEl.value;
+  const showClockIn = punchType === '上班' || punchType === '上下班';
+  const showClockOut = punchType === '下班' || punchType === '上下班';
+
+  clockInWrap.classList.toggle('hidden', !showClockIn);
+  clockOutWrap.classList.toggle('hidden', !showClockOut);
+}
+
+function saveRequestEdit(index) {
+  const item = myRequestRecords[index];
+  if (!item) {
+    setStatus('找不到這筆申請資料。');
+    return;
+  }
+
+  const requestDate = (document.getElementById('record-edit-date-' + index)?.value || '').trim();
+  const reason = (document.getElementById('record-edit-reason-' + index)?.value || '').trim();
+
+  if (!requestDate) {
+    setStatus('請先填寫日期。');
+    return;
+  }
+
+  if (!reason) {
+    setStatus('請先填寫事由。');
+    return;
+  }
+
+  const params = {
+    requestKind: item.requestKind || '',
+    requestId: item.requestId || '',
+    requestTime: item.requestTime || '',
+    originalRequestDate: item.requestDate || '',
+    originalRequestPeriod: item.requestPeriod || '',
+    requestDate: requestDate,
+    reason: reason
+  };
+
+  if (item.requestKind === 'overtime') {
+    const startTime = (document.getElementById('record-edit-start-' + index)?.value || '').trim();
+    const endTime = (document.getElementById('record-edit-end-' + index)?.value || '').trim();
+
+    if (!startTime || !endTime) {
+      setStatus('請完整填寫加班開始與結束時間。');
+      return;
+    }
+
+    params.startTime = startTime;
+    params.endTime = endTime;
+  } else if (item.requestKind === 'makeup') {
+    const punchType = (document.getElementById('record-edit-punch-type-' + index)?.value || '').trim();
+    const clockInTime = (document.getElementById('record-edit-clockin-' + index)?.value || '').trim();
+    const clockOutTime = (document.getElementById('record-edit-clockout-' + index)?.value || '').trim();
+
+    if (!punchType) {
+      setStatus('請選擇補卡類型。');
+      return;
+    }
+
+    if ((punchType === '上班' || punchType === '上下班') && !clockInTime) {
+      setStatus('請填寫上班時間。');
+      return;
+    }
+
+    if ((punchType === '下班' || punchType === '上下班') && !clockOutTime) {
+      setStatus('請填寫下班時間。');
+      return;
+    }
+
+    params.punchType = punchType;
+    params.clockInTime = clockInTime;
+    params.clockOutTime = clockOutTime;
+  } else {
+    setStatus('這筆申請目前不支援修改。');
+    return;
+  }
+
+  callApi('updateMyRequest', params, function(result) {
+    setStatus(result.message);
+    if (result.success) {
+      requestEditIndex = -1;
+      renderFeedbackPage();
+    }
+  });
+}
+
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+    
+    function bindPunchButtons() {
+      document.querySelectorAll('.punch-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+          punch(button.dataset.action);
+        });
+      });
+    }
+
+    function prefetchPunchLocation() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(function(position) {
+        cachedPunchPosition = position;
+        cachedPunchPositionAt = Date.now();
+      }, function() {}, { enableHighAccuracy:true, timeout:20000, maximumAge:30000 });
+    }
+
+    function punch(punchAction) {
+      if (!ready) return setStatus('LINE 尚未初始化完成，請稍候。');
+      setButtonsDisabled(true);
+      if (cachedPunchPosition && Date.now() - cachedPunchPositionAt < 60000 && cachedPunchPosition.coords.accuracy <= 100) {
+        setStatus('正在送出打卡...');
+        submitPunch(punchAction, cachedPunchPosition.coords);
+        prefetchPunchLocation();
+        return;
+      }
+      setStatus('正在取得 GPS 位置...');
+
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          cachedPunchPosition = position;
+          cachedPunchPositionAt = Date.now();
+          submitPunch(punchAction, position.coords);
+        },
+        function(error) {
+          setButtonsDisabled(false);
+          setStatus('定位失敗：請確認 LINE 已允許定位權限。\n' + error.message);
+        },
+        { enableHighAccuracy:true, timeout:20000, maximumAge:0 }
+      );
+    }
+
+    function submitPunch(punchAction, coords) {
+      if (!FAST_PUNCH_ENABLED) return submitPunchAppsScript(punchAction, coords);
+      const callbackName = 'awsPunchCallback_' + Date.now();
+      let completed = false;
+      window[callbackName] = function(result) {
+        completed = true;
+        delete window[callbackName];
+        if (result && result.fallback) return submitPunchAppsScript(punchAction, coords);
+        setStatus(result && result.success ? buildPunchSuccessMessage(result.message) : ((result && result.message) || '打卡失敗。'));
+        setButtonsDisabled(false);
+      };
+      const params = new URLSearchParams({callback:callbackName,action:punchAction,accessToken:accessToken,idToken:idToken,targetUserId:selectedPunchTargetUserId,latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy});
+      const script = document.createElement('script');
+      script.src = AWS_PUNCH_URL + '&' + params.toString();
+      script.onerror = function() {
+        if (completed) return;
+        delete window[callbackName];
+        submitPunchAppsScript(punchAction, coords);
+      };
+      document.body.appendChild(script);
+    }
+
+    function submitPunchAppsScript(punchAction, coords) {
+      const callbackName = 'jsonpCallback_' + Date.now();
+
+      window[callbackName] = function(result) {
+  if (result.success) {
+    setStatus(buildPunchSuccessMessage(result.message));
+  } else {
+    setStatus(result.message);
+  }
+
+  setButtonsDisabled(false);
+  delete window[callbackName];
+};
+
+      const params = new URLSearchParams({
+  api:'submitPunch',
+  callback:callbackName,
+  action:punchAction,
+  accessToken:accessToken,
+  idToken:idToken,
+  targetUserId:selectedPunchTargetUserId,
+  latitude:coords.latitude,
+  longitude:coords.longitude,
+  accuracy:coords.accuracy
+});
+
+      const script = document.createElement('script');
+      script.src = APPS_SCRIPT_URL + '?' + params.toString();
+      script.onerror = function() {
+        setStatus('送出失敗：無法連線到 Apps Script。');
+        setButtonsDisabled(false);
+      };
+      document.body.appendChild(script);
+    }
+
+    function buildPunchSuccessMessage(message) {
+  const text = String(message || '');
+
+  const firstLine = text.split('\n')[0] || '';
+  const timeMatch = text.match(/時間[:：]\s*(.+)/);
+  const placeMatch = text.match(/地點[:：]\s*(.+)/);
+  const distanceMatch = text.match(/距離[:：]\s*(.+)/);
+
+  const time = timeMatch ? timeMatch[1] : '';
+  const place = placeMatch ? placeMatch[1] : '';
+  const distance = distanceMatch ? distanceMatch[1] : '';
+
+  return firstLine + '\n' +
+    '時間：' + time + '\n' +
+    '地點：' + place + '\n' +
+    '距離：' + distance + '\n\n' +
+
+    'Vietnamese\n' +
+    'Chấm công thành công\n' +
+    'Thời gian: ' + time + '\n' +
+    'Địa điểm: ' + place + '\n' +
+    'Khoảng cách: ' + distance + '\n\n' +
+
+    'Thai\n' +
+    'ลงเวลาสำเร็จ\n' +
+    'เวลา: ' + time + '\n' +
+    'สถานที่: ' + place + '\n' +
+    'ระยะทาง: ' + distance;
+}
+
+    
+function renderOvertimeReviewPage() {
+  document.getElementById('panelTitle').textContent = '加班審核';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取待審核加班單...</div>';
+  setStatus('');
+
+  callApi('getPendingOvertime', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('加班審核', result.message);
+      return;
+    }
+
+    if (!result.records || result.records.length === 0) {
+      renderPlaceholder('加班審核', '目前沒有待審核加班單。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = result.records.map(function(item) {
+      return '<div class="card">' +
+        '<div class="card-title">' + item.name + '｜' + item.employeeNo + '</div>' +
+        '<div class="card-line">申請者：' + item.applicant + '</div>' +
+        '<div class="card-line">申請時間：' + item.requestTime + '</div>' +
+        '<div class="card-line">加班日期：' + item.overtimeDate + '</div>' +
+        '<div class="card-line">加班區間：' + item.overtimePeriod + '</div>' +
+        '<div class="card-line">時數：' + item.hours + ' 小時</div>' +
+        '<div class="card-line">事由：' + item.reason + '</div>' +
+        '<div class="action-row">' +
+          '<button class="small-btn approve-btn" onclick="reviewOvertime(\'' + item.requestTime + '\', \'' + item.employeeNo + '\', \'' + item.overtimeDate + '\', \'' + item.overtimePeriod + '\', \'approve\')">核准</button>' +
+          '<button class="small-btn reject-btn" onclick="reviewOvertime(\'' + item.requestTime + '\', \'' + item.employeeNo + '\', \'' + item.overtimeDate + '\', \'' + item.overtimePeriod + '\', \'reject\')">退回</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    setStatus(result.message);
+  });
+}
+
+function reviewOvertime(requestTime, employeeNo, overtimeDate, overtimePeriod, decision) {
+  const note = prompt(decision === 'approve' ? '請輸入核准備註，可留空' : '請輸入退回原因');
+
+  if (decision === 'reject' && !note) {
+    setStatus('退回請填寫原因。');
+    return;
+  }
+
+  callApi('reviewOvertime', {
+    requestTime: requestTime,
+    employeeNo: employeeNo,
+    overtimeDate: overtimeDate,
+    overtimePeriod: overtimePeriod,
+    decision: decision,
+    note: note || ''
+  }, function(result) {
+    setStatus(result.message);
+
+    if (result.success) {
+      renderOvertimeReviewPage();
+    }
+  });
+}
+
+function renderMakeupReviewPage() {
+  document.getElementById('panelTitle').textContent = '補卡審核';
+  document.getElementById('content').innerHTML = '<div class="placeholder">正在讀取待審核補卡單...</div>';
+  setStatus('');
+
+  callApi('getPendingMakeup', {}, function(result) {
+    if (!result.success) {
+      renderPlaceholder('補卡審核', result.message);
+      return;
+    }
+
+    if (!result.records || result.records.length === 0) {
+      renderPlaceholder('補卡審核', '目前沒有待審核補卡單。');
+      return;
+    }
+
+    document.getElementById('content').innerHTML = result.records.map(function(item) {
+      return '<div class="card">' +
+        '<div class="card-title">' + item.name + '｜' + item.employeeNo + '</div>' +
+        '<div class="card-line">申請編號：' + item.requestId + '</div>' +
+        '<div class="card-line">申請人：' + item.applicantName + '</div>' +
+        '<div class="card-line">部門：' + item.department + '</div>' +
+        '<div class="card-line">補卡日期：' + item.punchDate + '</div>' +
+        '<div class="card-line">補卡類型：' + item.punchType + '</div>' +
+        '<div class="card-line">上班時間：' + (item.clockInTime || '未填') + '</div>' +
+        '<div class="card-line">下班時間：' + (item.clockOutTime || '未填') + '</div>' +
+        '<div class="card-line">原因：' + item.reason + '</div>' +
+        '<div class="action-row">' +
+          '<button class="small-btn approve-btn" onclick="reviewMakeup(\'' + item.requestId + '\', \'approve\')">核准</button>' +
+          '<button class="small-btn reject-btn" onclick="reviewMakeup(\'' + item.requestId + '\', \'reject\')">退回</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    setStatus(result.message);
+  });
+}
+
+function reviewMakeup(requestId, decision) {
+  const note = prompt(decision === 'approve' ? '請輸入核准備註，可留空' : '請輸入退回原因');
+
+  if (decision === 'reject' && !note) {
+    setStatus('退回請填寫原因。');
+    return;
+  }
+
+  callApi('reviewMakeup', {
+    requestId: requestId,
+    decision: decision,
+    note: note || ''
+  }, function(result) {
+    setStatus(result.message);
+
+    if (result.success) {
+      renderMakeupReviewPage();
+    }
+  });
+}
+
+function callApi(apiName, extraParams, callback) {
+  if (!ready) {
+    setStatus('LINE 尚未初始化完成，請稍候。');
+    return;
+  }
+
+  const callbackName = 'jsonpCallback_' + Date.now();
+
+  window[callbackName] = function(result) {
+    delete window[callbackName];
+    callback(result);
+  };
+
+  const params = new URLSearchParams(Object.assign({
+    api: apiName,
+    callback: callbackName,
+    accessToken: accessToken,
+    idToken: idToken
+  }, extraParams || {}));
+
+  const script = document.createElement('script');
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.onerror = function() {
+    setStatus('連線 Apps Script 失敗。');
+  };
+  document.body.appendChild(script);
+}
+
+    
+    function setButtonsDisabled(disabled) {
+      document.querySelectorAll('.punch-btn').forEach(function(button) { button.disabled = disabled; });
+    }
+
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    init();
+  </script>
+</body>
+</html>
+
