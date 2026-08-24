@@ -1297,14 +1297,15 @@ function downloadAdminMonthlyReport() {
 
 function renderAdminRosterPage() {
   document.getElementById('panelTitle').textContent = '員工名單';
-  document.getElementById('content').innerHTML = '<input id="rosterSearch" class="input" placeholder="搜尋姓名、員編、部門" oninput="filterAdminRoster()"><div id="rosterArea"></div>';
+  document.getElementById('content').innerHTML = '<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(140px,1fr);gap:8px"><input id="rosterSearch" class="input" placeholder="搜尋姓名、員編、部門" oninput="filterAdminRoster()"><select id="rosterType" class="input" onchange="filterAdminRoster()"><option value="">全部員工類型</option><option value="本國員工">本國員工</option><option value="外籍員工">外籍員工</option></select></div><div id="rosterArea"></div>';
   callApi('getAdminEmployeeRoster', {}, function(result) { if (!result || !result.success) return setStatus((result && result.message) || '讀取失敗。'); window.adminRosterRows = result.rows || []; filterAdminRoster(); setStatus(result.message || ''); });
 }
 
 function filterAdminRoster() {
   const keyword = String((document.getElementById('rosterSearch') || {}).value || '').toLowerCase();
-  const rows = (window.adminRosterRows || []).filter(function(r) { return [r.employeeNo,r.name,r.department].join(' ').toLowerCase().includes(keyword); });
-  document.getElementById('rosterArea').innerHTML = '<div style="display:grid;gap:8px;margin-top:12px">' + rows.map(function(r) { return '<div style="border:1px solid #dfe5ec;border-radius:10px;padding:10px"><div style="display:flex;justify-content:space-between"><strong>' + escapeOvertimeHtml(r.name || '') + '｜' + escapeOvertimeHtml(r.employeeNo || '') + '</strong><span style="color:' + (r.active ? '#067647' : '#b42318') + '">' + (r.active ? '在職' : '離職') + '</span></div><div style="font-size:13px;color:#667085;margin-top:5px">' + escapeOvertimeHtml(r.department || '') + '｜' + escapeOvertimeHtml(r.shift || '') + '｜' + escapeOvertimeHtml(r.clockIn || '') + '–' + escapeOvertimeHtml(r.clockOut || '') + '</div><div style="font-size:12px;color:#667085;margin-top:4px">入職：' + escapeOvertimeHtml(r.hireDate || '—') + '　離職：' + escapeOvertimeHtml(r.terminationDate || '—') + '</div></div>'; }).join('') + '</div>';
+  const type = String((document.getElementById('rosterType') || {}).value || '');
+  const rows = (window.adminRosterRows || []).filter(function(r) { return [r.employeeNo,r.name,r.department].join(' ').toLowerCase().includes(keyword) && (!type || (r.employeeType || '本國員工') === type); });
+  document.getElementById('rosterArea').innerHTML = '<div style="display:grid;gap:8px;margin-top:12px">' + rows.map(function(r) { return '<div style="border:1px solid #dfe5ec;border-radius:10px;padding:10px"><div style="display:flex;justify-content:space-between"><strong>' + escapeOvertimeHtml(r.name || '') + '｜' + escapeOvertimeHtml(r.employeeNo || '') + '</strong><span style="color:' + (r.active ? '#067647' : '#b42318') + '">' + (r.active ? '在職' : '離職') + '</span></div><div style="font-size:13px;color:#667085;margin-top:5px">' + escapeOvertimeHtml(r.department || '') + '｜' + escapeOvertimeHtml(r.employeeType || '本國員工') + '｜' + escapeOvertimeHtml(r.language || '中文') + '</div><div style="font-size:13px;color:#667085;margin-top:4px">' + escapeOvertimeHtml(r.shift || '') + '｜' + escapeOvertimeHtml(r.clockIn || '') + '–' + escapeOvertimeHtml(r.clockOut || '') + '</div><div style="font-size:12px;color:#667085;margin-top:4px">入職：' + escapeOvertimeHtml(r.hireDate || '—') + '　離職：' + escapeOvertimeHtml(r.terminationDate || '—') + '</div></div>'; }).join('') + '</div>';
 }
 
 function renderAdminCalendarPage() {
