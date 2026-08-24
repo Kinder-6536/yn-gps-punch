@@ -1907,7 +1907,9 @@ function callApi(apiName, extraParams, callback) {
 
   const fastReadApis = ['getMyMonthlyHoursSummary', 'getMonthlyHoursSummary', 'getAdminMonthlyAbnormal'];
   const script = document.createElement('script');
-  script.src = (fastReadApis.includes(apiName) ? AWS_ATTENDANCE_READ_URL : APPS_SCRIPT_URL) + '?' + params.toString();
+  script.src = fastReadApis.includes(apiName)
+    ? AWS_ATTENDANCE_READ_URL + '&' + params.toString()
+    : APPS_SCRIPT_URL + '?' + params.toString();
   script.onerror = function() {
     if (fastReadApis.includes(apiName)) {
       script.remove();
