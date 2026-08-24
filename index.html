@@ -149,6 +149,8 @@
     let overtimeEntrySequence = 0;
     let myRequestRecords = [];
     let requestEditIndex = -1;
+    let overtimeSubmitPending = false;
+    let makeupSubmitPending = false;
     let cachedPunchPosition = null;
     let cachedPunchPositionAt = 0;
 
@@ -418,14 +420,15 @@ function renderPunchIdentityArea() {
     '</div>';
 }
     
-      function renderOvertimeApplicationPage() {
+function renderOvertimeApplicationPage() {
+  overtimeSubmitPending = false;
   document.getElementById('panelTitle').textContent = '加班申請';
   document.getElementById('content').innerHTML =
     '<div class="form">' +
       '<div id="overtimeApplicant" class="overtime-applicant">正在讀取申請人與員工資料...</div>' +
       '<div id="overtimeEntries"></div>' +
       '<button type="button" class="overtime-add-btn" onclick="addOvertimeEntry()">＋ 新增一筆</button>' +
-      '<button type="button" class="main-btn primary full-btn" onclick="submitOvertimeApplications()">送出加班申請</button>' +
+      '<button id="submitOvertimeButton" type="button" class="main-btn primary full-btn" onclick="submitOvertimeApplications()">送出加班申請</button>' +
     '</div>';
 
   overtimeApplicant = null;
@@ -565,6 +568,7 @@ function updateOvertimeHours(entryId) {
 }
 
 function submitOvertimeApplications() {
+  if (overtimeSubmitPending) return;
   if (!ready) {
     setStatus('LINE 尚未初始化完成，請稍候。');
     return;
@@ -603,13 +607,21 @@ function submitOvertimeApplications() {
   }
 
   setStatus('正在送出加班申請...');
+  overtimeSubmitPending = true;
+  const submitButton = document.getElementById('submitOvertimeButton');
+  if (submitButton) { submitButton.disabled = true; submitButton.textContent = '送出處理中…'; }
 
   callApi('submitOvertime', { items: JSON.stringify(items) }, function(result) {
+    overtimeSubmitPending = false;
+    if (submitButton) { submitButton.disabled = false; submitButton.textContent = '送出加班申請'; }
     setStatus(result.message);
 
     if (!result.success) {
+      alert(result.message || '加班申請送出失敗。');
       return;
     }
+
+    alert(result.message || '加班申請已送出。');
 
     const container = document.getElementById('overtimeEntries');
     container.innerHTML = '';
@@ -643,6 +655,7 @@ function escapeOvertimeHtml(value) {
 
   
 function renderMakeupPunchPage() {
+  makeupSubmitPending = false;
   document.getElementById('panelTitle').textContent = '補卡申請';
 
   document.getElementById('content').innerHTML =
@@ -664,7 +677,7 @@ function renderMakeupPunchPage() {
       '<label>補卡原因</label>' +
       '<textarea id="makeupReason" class="input" rows="4" placeholder="請輸入補卡原因"></textarea>' +
 
-      '<button class="main-btn primary full-btn" onclick="submitMakeupPunch()">送出補卡申請</button>' +
+      '<button id="submitMakeupButton" class="main-btn primary full-btn" onclick="submitMakeupPunch()">送出補卡申請</button>' +
     '</div>';
 
   setStatus('');
@@ -673,6 +686,7 @@ function renderMakeupPunchPage() {
 }
 
 function submitMakeupPunch() {
+  if (makeupSubmitPending) return;
   if (!ready) {
     setStatus('LINE 尚未初始化完成，請稍候。');
     return;
@@ -706,33 +720,23 @@ function submitMakeupPunch() {
     return;
   }
 
-  const callbackName = 'jsonpCallback_' + Date.now();
+  makeupSubmitPending = true;
+  const submitButton = document.getElementById('submitMakeupButton');
+  if (submitButton) { submitButton.disabled = true; submitButton.textContent = '送出處理中…'; }
 
-  window[callbackName] = function(result) {
-    setStatus(result.message);
-    delete window[callbackName];
-  };
-
-  const params = new URLSearchParams({
-    api: 'submitMakeupPunch',
-    callback: callbackName,
-    accessToken: accessToken,
-    idToken: idToken,
+  callApi('submitMakeupPunch', {
     targetUserId: targetUserId,
     punchDate: punchDate,
     punchType: punchType,
     clockInTime: clockInTime,
     clockOutTime: clockOutTime,
     reason: reason
+  }, function(result) {
+    makeupSubmitPending = false;
+    if (submitButton) { submitButton.disabled = false; submitButton.textContent = '送出補卡申請'; }
+    setStatus(result.message);
+    alert(result.message || (result.success ? '補卡申請已送出。' : '補卡申請送出失敗。'));
   });
-
-  const script = document.createElement('script');
-  script.src = APPS_SCRIPT_URL + '?' + params.toString();
-  script.onerror = function() {
-    setStatus('送出失敗：無法連線到 Apps Script。');
-  };
-
-  document.body.appendChild(script);
 
   setStatus('正在送出補卡申請...');
 }
@@ -1906,7 +1910,13 @@ function callApi(apiName, extraParams, callback) {
   }, extraParams || {}));
 
   const fastReadApis = [
+    'getAdminTodayAttendance',
     'getEmployeeOptions',
+    'getOvertimeFormData',
+    'getPendingOvertime',
+    'getPendingMakeup',
+    'getMyRequestRecords',
+    'getRecentPunchRecords',
     'getPunchTargets',
     'getMyMonthlyHoursSummary',
     'getMonthlyHoursSummary',
