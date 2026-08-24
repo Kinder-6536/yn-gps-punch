@@ -133,6 +133,7 @@
     const LIFF_ID = '2010401445-uCijQZfw';
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-bmhtzpcUPtetf7KbnPZDnehn-TLbvogza9V_a6WZoye1WoPe_okWAFpwzRf_ruxa/exec';
     const AWS_PUNCH_URL = 'https://3oa6b5iz6e.execute-api.ap-east-2.amazonaws.com/prod/stock-data?route=attendance_fast_punch';
+    const AWS_ATTENDANCE_READ_URL = 'https://3oa6b5iz6e.execute-api.ap-east-2.amazonaws.com/prod/stock-data?route=attendance_fast_read';
     const FAST_PUNCH_ENABLED = new URLSearchParams(location.search).get('fast') !== '0';
 
     let accessToken = '';
@@ -1136,12 +1137,9 @@ function queryEmployeeMonthlyHours() {
     return;
   }
 
-  const callbackName = 'jsonpCallback_' + Date.now();
-
-  window[callbackName] = function(result) {
+  callApi('getMyMonthlyHoursSummary', { month: month }, function(result) {
     if (!result.success) {
       setStatus(result.message);
-      delete window[callbackName];
       return;
     }
 
@@ -1164,24 +1162,7 @@ function queryEmployeeMonthlyHours() {
       '加班換算：' + data.overtimeText
     );
 
-    delete window[callbackName];
-  };
-
-  const params = new URLSearchParams({
-    api: 'getMyMonthlyHoursSummary',
-    callback: callbackName,
-    accessToken: accessToken,
-    idToken: idToken,
-    month: month
   });
-
-  const script = document.createElement('script');
-  script.src = APPS_SCRIPT_URL + '?' + params.toString();
-  script.onerror = function() {
-    setStatus('查詢失敗：無法連線到 Apps Script。');
-  };
-
-  document.body.appendChild(script);
 
   setStatus('查詢中...');
 }
@@ -1910,7 +1891,7 @@ function callApi(apiName, extraParams, callback) {
     return;
   }
 
-  const callbackName = 'jsonpCallback_' + Date.now();
+  const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
 
   window[callbackName] = function(result) {
     delete window[callbackName];
@@ -1924,9 +1905,18 @@ function callApi(apiName, extraParams, callback) {
     idToken: idToken
   }, extraParams || {}));
 
+  const fastReadApis = ['getMyMonthlyHoursSummary', 'getMonthlyHoursSummary', 'getAdminMonthlyAbnormal'];
   const script = document.createElement('script');
-  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  script.src = (fastReadApis.includes(apiName) ? AWS_ATTENDANCE_READ_URL : APPS_SCRIPT_URL) + '?' + params.toString();
   script.onerror = function() {
+    if (fastReadApis.includes(apiName)) {
+      script.remove();
+      const fallback = document.createElement('script');
+      fallback.src = APPS_SCRIPT_URL + '?' + params.toString();
+      fallback.onerror = function() { setStatus('查詢連線失敗。'); };
+      document.body.appendChild(fallback);
+      return;
+    }
     setStatus('連線 Apps Script 失敗。');
   };
   document.body.appendChild(script);
