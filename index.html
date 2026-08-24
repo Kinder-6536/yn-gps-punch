@@ -1905,7 +1905,13 @@ function callApi(apiName, extraParams, callback) {
     idToken: idToken
   }, extraParams || {}));
 
-  const fastReadApis = ['getMyMonthlyHoursSummary', 'getMonthlyHoursSummary', 'getAdminMonthlyAbnormal'];
+  const fastReadApis = [
+    'getEmployeeOptions',
+    'getPunchTargets',
+    'getMyMonthlyHoursSummary',
+    'getMonthlyHoursSummary',
+    'getAdminMonthlyAbnormal'
+  ];
   const script = document.createElement('script');
   script.src = fastReadApis.includes(apiName)
     ? AWS_ATTENDANCE_READ_URL + '&' + params.toString()
