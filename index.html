@@ -168,12 +168,12 @@
   admin: [
   ['recentAbnormal', '近期異常'],
   ['realtime', '即時出勤'],
-  ['abnormalSearch', '異常查詢'],
+  ['abnormalSearch', '歷史異常'],
   ['reviewCenter', '審核系統'],
   ['monthlyHours', '本月時數'],
-  ['reportGenerate', '報表產生'],
-  ['employees', '員工資料'],
-  ['settings', '系統設定']
+  ['reportGenerate', '月報匯出'],
+  ['employees', '員工名單'],
+  ['settings', '出勤月曆']
 ]
 };
 
@@ -285,6 +285,10 @@ function switchMode(mode) {
 
 function showPage(page) {
   if (page === 'report') return renderAttendanceRecordsPage();
+  if (page === 'abnormalSearch') return renderAdminHistoryPage();
+  if (page === 'reportGenerate') return renderAdminMonthlyReportPage();
+  if (page === 'employees') return renderAdminRosterPage();
+  if (page === 'settings') return renderAdminCalendarPage();
   if (page === 'punch') return renderPunchPage();
   if (page === 'recentAbnormal') return renderRecentAbnormalPage();
   if (page === 'realtime') return renderRealtimePage();
@@ -1128,6 +1132,90 @@ function normalizeAdminKeyword(value) {
     '<button class="main-btn primary" onclick="loadApiMessage(\'' + apiName + '\')">查詢</button>';
 
   setStatus('請按查詢。');
+}
+
+function attendanceCurrentMonth() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+}
+
+function attendanceCompactTable(headers, rows) {
+  return '<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>' +
+    headers.map(function(value) { return '<th style="padding:8px 6px;text-align:left;border-bottom:2px solid #dbe3ee;white-space:nowrap">' + value + '</th>'; }).join('') +
+    '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+}
+
+function renderAdminHistoryPage() {
+  document.getElementById('panelTitle').textContent = '歷史異常';
+  document.getElementById('content').innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    '<input id="historyMonth" class="input" type="month" value="' + attendanceCurrentMonth() + '">' +
+    '<select id="historyType" class="input"><option value="">全部異常</option><option>大遲到</option><option>早退</option><option>上班未打卡</option><option>下班未打卡</option></select></div>' +
+    '<input id="historyEmployee" class="input" style="margin-top:8px" placeholder="員工編號（空白代表全部）">' +
+    '<button class="main-btn primary full-btn" onclick="loadAdminHistory()">查詢</button><div id="historyArea"></div>';
+  loadAdminHistory();
+}
+
+function loadAdminHistory() {
+  callApi('getAdminHistoricalAbnormal', {month:document.getElementById('historyMonth').value, abnormalType:document.getElementById('historyType').value, employeeNo:document.getElementById('historyEmployee').value}, function(result) {
+    if (!result || !result.success) return setStatus((result && result.message) || '查詢失敗。');
+    const rows = (result.rows || []).map(function(row) { return '<tr><td style="padding:8px 6px;border-bottom:1px solid #eee;white-space:nowrap">' + escapeOvertimeHtml(row['日期'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + escapeOvertimeHtml(row['姓名'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + escapeOvertimeHtml(row['上班時間'] || '') + '／' + escapeOvertimeHtml(row['下班時間'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee;color:#b42318">' + escapeOvertimeHtml(row['異常原因'] || '') + '</td></tr>'; });
+    document.getElementById('historyArea').innerHTML = rows.length ? attendanceCompactTable(['日期','員工','上下班','異常'], rows) : '<div class="placeholder">沒有符合條件的異常。</div>';
+    setStatus(result.message || '');
+  });
+}
+
+let adminMonthlyReportRows = [];
+function renderAdminMonthlyReportPage() {
+  document.getElementById('panelTitle').textContent = '月報匯出';
+  document.getElementById('content').innerHTML = '<input id="reportMonth" class="input" type="month" value="' + attendanceCurrentMonth() + '">' +
+    '<button class="main-btn primary full-btn" onclick="loadAdminMonthlyReport()">產生月報</button>' +
+    '<button class="main-btn" style="margin-top:8px" onclick="downloadAdminMonthlyReport()">下載 CSV</button><div id="monthlyReportArea"></div>';
+  loadAdminMonthlyReport();
+}
+
+function loadAdminMonthlyReport() {
+  callApi('getAdminMonthlyReport', {month:document.getElementById('reportMonth').value}, function(result) {
+    if (!result || !result.success) return setStatus((result && result.message) || '產生月報失敗。');
+    adminMonthlyReportRows = result.rows || [];
+    const rows = adminMonthlyReportRows.map(function(row) { return '<tr><td style="padding:8px 6px;border-bottom:1px solid #eee">' + escapeOvertimeHtml(row.name || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + row.attendanceDays + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + row.abnormalDays + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + row.hours + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + row.overtimeMinutes + '</td></tr>'; });
+    document.getElementById('monthlyReportArea').innerHTML = attendanceCompactTable(['員工','出勤天','異常','總時數','加班分'], rows);
+    setStatus(result.message || '');
+  });
+}
+
+function downloadAdminMonthlyReport() {
+  if (!adminMonthlyReportRows.length) return setStatus('請先產生月報。');
+  const headers = ['員工編號','姓名','部門','出勤天數','正常天數','異常天數','遲到','早退','缺卡','總時數','加班分鐘'];
+  const lines = [headers].concat(adminMonthlyReportRows.map(function(r) { return [r.employeeNo,r.name,r.department,r.attendanceDays,r.normalDays,r.abnormalDays,r.lateDays,r.earlyDays,r.missingDays,r.hours,r.overtimeMinutes]; }));
+  const csv = '\ufeff' + lines.map(function(line) { return line.map(function(value) { return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+  const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'})); link.download = (document.getElementById('reportMonth').value || '出勤') + '-出勤月報.csv'; link.click(); URL.revokeObjectURL(link.href);
+}
+
+function renderAdminRosterPage() {
+  document.getElementById('panelTitle').textContent = '員工名單';
+  document.getElementById('content').innerHTML = '<input id="rosterSearch" class="input" placeholder="搜尋姓名、員編、部門" oninput="filterAdminRoster()"><div id="rosterArea"></div>';
+  callApi('getAdminEmployeeRoster', {}, function(result) { if (!result || !result.success) return setStatus((result && result.message) || '讀取失敗。'); window.adminRosterRows = result.rows || []; filterAdminRoster(); setStatus(result.message || ''); });
+}
+
+function filterAdminRoster() {
+  const keyword = String((document.getElementById('rosterSearch') || {}).value || '').toLowerCase();
+  const rows = (window.adminRosterRows || []).filter(function(r) { return [r.employeeNo,r.name,r.department].join(' ').toLowerCase().includes(keyword); });
+  document.getElementById('rosterArea').innerHTML = '<div style="display:grid;gap:8px;margin-top:12px">' + rows.map(function(r) { return '<div style="border:1px solid #dfe5ec;border-radius:10px;padding:10px"><div style="display:flex;justify-content:space-between"><strong>' + escapeOvertimeHtml(r.name || '') + '｜' + escapeOvertimeHtml(r.employeeNo || '') + '</strong><span style="color:' + (r.active ? '#067647' : '#b42318') + '">' + (r.active ? '在職' : '離職') + '</span></div><div style="font-size:13px;color:#667085;margin-top:5px">' + escapeOvertimeHtml(r.department || '') + '｜' + escapeOvertimeHtml(r.shift || '') + '｜' + escapeOvertimeHtml(r.clockIn || '') + '–' + escapeOvertimeHtml(r.clockOut || '') + '</div><div style="font-size:12px;color:#667085;margin-top:4px">入職：' + escapeOvertimeHtml(r.hireDate || '—') + '　離職：' + escapeOvertimeHtml(r.terminationDate || '—') + '</div></div>'; }).join('') + '</div>';
+}
+
+function renderAdminCalendarPage() {
+  document.getElementById('panelTitle').textContent = '出勤月曆';
+  document.getElementById('content').innerHTML = '<input id="calendarMonth" class="input" type="month" value="' + attendanceCurrentMonth() + '"><button class="main-btn primary full-btn" onclick="loadAdminCalendar()">查看月曆</button><div id="calendarArea"></div>';
+  loadAdminCalendar();
+}
+
+function loadAdminCalendar() {
+  callApi('getAdminAttendanceCalendar', {month:document.getElementById('calendarMonth').value}, function(result) {
+    if (!result || !result.success) return setStatus((result && result.message) || '讀取月曆失敗。');
+    const days = result.days || [];
+    document.getElementById('calendarArea').innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px">' + days.map(function(day) { const color = day.abnormal ? '#b42318' : (day.overtime ? '#175cd3' : '#067647'); const bg = day.abnormal ? '#fef3f2' : (day.overtime ? '#eff4ff' : '#ecfdf3'); return '<details style="border:1px solid #dfe5ec;border-radius:10px;padding:9px;background:' + bg + '"><summary style="cursor:pointer;list-style:none"><strong>' + escapeOvertimeHtml(day.date || '') + '</strong><div style="font-size:12px;color:' + color + ';margin-top:4px">正常 ' + day.normal + '｜異常 ' + day.abnormal + '｜加班 ' + day.overtime + '</div></summary><div style="font-size:12px;margin-top:8px">' + (day.rows || []).map(function(r) { return '<div style="padding:5px 0;border-top:1px solid #ddd">' + escapeOvertimeHtml(r.name || '') + '　' + escapeOvertimeHtml(r.clockIn || '') + '–' + escapeOvertimeHtml(r.clockOut || '') + (r.reason ? '<br><span style="color:#b42318">' + escapeOvertimeHtml(r.reason) + '</span>' : '') + '</div>'; }).join('') + '</div></details>'; }).join('') + '</div>';
+    setStatus(result.message || '');
+  });
 }
 
 function renderAttendanceRecordsPage() {
@@ -1975,6 +2063,7 @@ function callApi(apiName, extraParams, callback) {
     'getMyMonthlyHoursSummary',
     'getMonthlyHoursSummary',
     'getAdminMonthlyAbnormal'
+    ,'getAdminHistoricalAbnormal','getAdminMonthlyReport','getAdminEmployeeRoster','getAdminAttendanceCalendar'
   ];
   const script = document.createElement('script');
   script.src = fastReadApis.includes(apiName)
