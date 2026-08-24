@@ -222,6 +222,15 @@ if (autoAction) {
   return;
 }
 
+const requestedPage = getPageFromUrl();
+if (requestedPage) {
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.classList.toggle('active', item.dataset.page === requestedPage);
+  });
+  showPage(requestedPage);
+  return;
+}
+
 setStatus('已取得 LINE 資料，請選擇功能。');
 
       } catch (error) {
@@ -245,7 +254,13 @@ setStatus('已取得 LINE 資料，請選擇功能。');
 
 
     
-    function switchMode(mode) {
+function getPageFromUrl() {
+  const page = new URLSearchParams(window.location.search).get('page') || '';
+  const allowed = menus.employee.concat(menus.admin).map(function(item) { return item[0]; });
+  return allowed.includes(page) ? page : '';
+}
+
+function switchMode(mode) {
       currentMode = mode;
       document.getElementById('employeeTab').classList.toggle('active', mode === 'employee');
       document.getElementById('adminTab').classList.toggle('active', mode === 'admin');
@@ -268,7 +283,8 @@ setStatus('已取得 LINE 資料，請選擇功能。');
       });
     }
 
-    function showPage(page) {
+function showPage(page) {
+  if (page === 'report') return renderAttendanceRecordsPage();
   if (page === 'punch') return renderPunchPage();
   if (page === 'recentAbnormal') return renderRecentAbnormalPage();
   if (page === 'realtime') return renderRealtimePage();
@@ -1112,6 +1128,37 @@ function normalizeAdminKeyword(value) {
     '<button class="main-btn primary" onclick="loadApiMessage(\'' + apiName + '\')">查詢</button>';
 
   setStatus('請按查詢。');
+}
+
+function renderAttendanceRecordsPage() {
+  document.getElementById('panelTitle').textContent = '出勤紀錄';
+  document.getElementById('content').innerHTML =
+    '<button class="main-btn primary full-btn" onclick="loadAttendanceRecords()">重新查詢</button>' +
+    '<div id="attendanceRecordsArea"></div>';
+  setStatus('正在讀取出勤紀錄…');
+  loadAttendanceRecords();
+}
+
+function loadAttendanceRecords() {
+  if (!ready) return setStatus('LINE 尚未初始化完成，請稍候。');
+  callApi('getRecentPunchRecords', {}, function(result) {
+    if (!result || !result.success) return setStatus((result && result.message) || '讀取出勤紀錄失敗。');
+    const rows = result.records || [];
+    const area = document.getElementById('attendanceRecordsArea');
+    if (!area) return;
+    if (!rows.length) {
+      area.innerHTML = '<div class="placeholder">目前沒有打卡紀錄。</div>';
+      return setStatus('');
+    }
+    area.innerHTML = '<div style="overflow-x:auto;margin-top:14px"><table style="width:100%;border-collapse:collapse;min-width:560px">' +
+      '<thead><tr style="text-align:left;border-bottom:2px solid #dbe3ee"><th style="padding:10px 8px">日期</th><th style="padding:10px 8px">上班</th><th style="padding:10px 8px">下班</th><th style="padding:10px 8px">工時</th><th style="padding:10px 8px">狀態</th></tr></thead><tbody>' +
+      rows.map(function(row) {
+        const color = row.isAbnormal ? '#b42318' : '#067647';
+        const background = row.isAbnormal ? '#fef3f2' : '#ecfdf3';
+        return '<tr style="border-bottom:1px solid #e7ebf0"><td style="padding:11px 8px;white-space:nowrap">' + escapeOvertimeHtml(row.date || '') + '</td><td style="padding:11px 8px">' + escapeOvertimeHtml(row.clockIn || '未打卡') + '</td><td style="padding:11px 8px">' + escapeOvertimeHtml(row.clockOut || '未打卡') + '</td><td style="padding:11px 8px;white-space:nowrap">' + escapeOvertimeHtml(row.workHours || '—') + '</td><td style="padding:11px 8px"><span style="display:inline-block;padding:4px 9px;border-radius:999px;color:' + color + ';background:' + background + ';font-weight:700;white-space:nowrap">' + escapeOvertimeHtml(row.status || '正常') + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>';
+    setStatus('已顯示最近 ' + rows.length + ' 個出勤日。');
+  });
 }
 
 function renderEmployeeMonthlyHoursPage() {
