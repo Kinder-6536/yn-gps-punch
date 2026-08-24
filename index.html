@@ -824,6 +824,7 @@ function renderMonthlyHoursPage() {
       '</select>' +
 
       '<button class="main-btn primary full-btn" onclick="queryMonthlyHours()">查詢時數</button>' +
+      '<button class="main-btn full-btn" onclick="downloadMonthlyHoursExcel()">下載 Excel</button>' +
 
       '<div id="monthlyHoursResult" class="placeholder"></div>' +
     '</div>';
@@ -842,7 +843,7 @@ function renderMonthlyHoursPage() {
 
     const select = document.getElementById('hoursEmployee');
 
-    select.innerHTML = result.employees.map(function(employee) {
+    select.innerHTML = '<option value="">全部員工</option>' + result.employees.map(function(employee) {
       return '<option value="' + employee.employeeNo + '">' +
         employee.name + '｜' + employee.employeeNo + '｜' + employee.department +
       '</option>';
@@ -857,7 +858,7 @@ function renderMonthlyHoursPage() {
   const employeeNo = document.getElementById('hoursEmployee').value;
 
   if (!monthValue || !employeeNo) {
-    setStatus('請選擇月份與員工。');
+    setStatus(employeeNo ? '請選擇月份。' : '畫面查詢請選一位員工；全部員工請使用下載 Excel。');
     return;
   }
 
@@ -902,6 +903,29 @@ document.getElementById('monthlyHoursResult').innerHTML =
   '</div>';
 
     setStatus(result.message);
+  });
+}
+
+function downloadMonthlyHoursExcel() {
+  const month = document.getElementById('hoursMonth').value;
+  const employeeNo = document.getElementById('hoursEmployee').value;
+  if (!month) return setStatus('請先選擇月份。');
+  setStatus('正在整理 Excel…');
+  callApi('getAdminMonthlyHoursExport', {month:month, employeeNo:employeeNo}, function(result) {
+    if (!result || !result.success) return setStatus((result && result.message) || '下載資料失敗。');
+    const headers = ['日期','員工編號','姓名','部門','上班時間','下班時間','出勤時數','狀態','異常原因','加班分鐘'];
+    const values = (result.rows || []).map(function(r) { return [r.date,r.employeeNo,r.name,r.department,r.clockIn,r.clockOut,r.hours,r.status,r.reason,r.overtimeMinutes]; });
+    const escapeXml = function(value) { return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+    const rowsXml = [headers].concat(values).map(function(row) { return '<Row>' + row.map(function(value) { return '<Cell><Data ss:Type="String">' + escapeXml(value) + '</Data></Cell>'; }).join('') + '</Row>'; }).join('');
+    const xml = '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="本月時數"><Table>' + rowsXml + '</Table></Worksheet></Workbook>';
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'}));
+    const selected = document.getElementById('hoursEmployee');
+    const person = employeeNo ? String(selected.options[selected.selectedIndex].text || employeeNo).split('｜')[0] : '全部員工';
+    link.download = month + '-' + person + '-本月時數.xls';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setStatus('Excel 已下載，共 ' + values.length + ' 筆。');
   });
 }
 
@@ -1158,7 +1182,7 @@ function renderAdminHistoryPage() {
 function loadAdminHistory() {
   callApi('getAdminHistoricalAbnormal', {month:document.getElementById('historyMonth').value, abnormalType:document.getElementById('historyType').value, employeeNo:document.getElementById('historyEmployee').value}, function(result) {
     if (!result || !result.success) return setStatus((result && result.message) || '查詢失敗。');
-    const rows = (result.rows || []).map(function(row) { return '<tr><td style="padding:8px 6px;border-bottom:1px solid #eee;white-space:nowrap">' + escapeOvertimeHtml(row['日期'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + escapeOvertimeHtml(row['姓名'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + escapeOvertimeHtml(row['上班時間'] || '') + '／' + escapeOvertimeHtml(row['下班時間'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee;color:#b42318">' + escapeOvertimeHtml(row['異常原因'] || '') + '</td></tr>'; });
+    const rows = (result.rows || []).map(function(row) { const reasons = String(row['異常原因'] || '').split('、').filter(Boolean).map(escapeOvertimeHtml).join('<br>'); return '<tr><td style="padding:8px 6px;border-bottom:1px solid #eee;white-space:nowrap">' + escapeOvertimeHtml(row['日期'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee;white-space:nowrap">' + escapeOvertimeHtml(row['姓名'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee">' + escapeOvertimeHtml(row['上班時間'] || '') + '／' + escapeOvertimeHtml(row['下班時間'] || '') + '</td><td style="padding:8px 6px;border-bottom:1px solid #eee;color:#b42318;line-height:1.55">' + reasons + '</td></tr>'; });
     document.getElementById('historyArea').innerHTML = rows.length ? attendanceCompactTable(['日期','員工','上下班','異常'], rows) : '<div class="placeholder">沒有符合條件的異常。</div>';
     setStatus(result.message || '');
   });
@@ -2063,7 +2087,7 @@ function callApi(apiName, extraParams, callback) {
     'getMyMonthlyHoursSummary',
     'getMonthlyHoursSummary',
     'getAdminMonthlyAbnormal'
-    ,'getAdminHistoricalAbnormal','getAdminMonthlyReport','getAdminEmployeeRoster','getAdminAttendanceCalendar'
+    ,'getAdminHistoricalAbnormal','getAdminMonthlyReport','getAdminMonthlyHoursExport','getAdminEmployeeRoster','getAdminAttendanceCalendar'
   ];
   const script = document.createElement('script');
   script.src = fastReadApis.includes(apiName)
