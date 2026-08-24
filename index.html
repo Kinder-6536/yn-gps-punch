@@ -132,6 +132,8 @@
   <script>
     const LIFF_ID = '2010401445-uCijQZfw';
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-bmhtzpcUPtetf7KbnPZDnehn-TLbvogza9V_a6WZoye1WoPe_okWAFpwzRf_ruxa/exec';
+    const AWS_PUNCH_URL = 'https://3oa6b5iz6e.execute-api.ap-east-2.amazonaws.com/prod/stock-data?route=attendance_fast_punch';
+    const FAST_PUNCH_ENABLED = new URLSearchParams(location.search).get('fast') !== '0';
 
     let accessToken = '';
     let idToken = '';
@@ -146,6 +148,8 @@
     let overtimeEntrySequence = 0;
     let myRequestRecords = [];
     let requestEditIndex = -1;
+    let cachedPunchPosition = null;
+    let cachedPunchPositionAt = 0;
 
     const menus = {
     employee: [
@@ -203,6 +207,7 @@ setStatus('LIFF 初始化完成，正在確認登入...');
         accessToken = liff.getAccessToken() || '';
         idToken = liff.getIDToken() || '';
         ready = true;
+        prefetchPunchLocation();
 
 const autoAction = getActionFromUrl();
 
@@ -1659,13 +1664,31 @@ function escapeHtml(text) {
       });
     }
 
+    function prefetchPunchLocation() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(function(position) {
+        cachedPunchPosition = position;
+        cachedPunchPositionAt = Date.now();
+      }, function() {}, { enableHighAccuracy:true, timeout:20000, maximumAge:30000 });
+    }
+
     function punch(punchAction) {
       if (!ready) return setStatus('LINE 尚未初始化完成，請稍候。');
       setButtonsDisabled(true);
+      if (cachedPunchPosition && Date.now() - cachedPunchPositionAt < 60000 && cachedPunchPosition.coords.accuracy <= 100) {
+        setStatus('正在送出打卡...');
+        submitPunch(punchAction, cachedPunchPosition.coords);
+        prefetchPunchLocation();
+        return;
+      }
       setStatus('正在取得 GPS 位置...');
 
       navigator.geolocation.getCurrentPosition(
-        function(position) { submitPunch(punchAction, position.coords); },
+        function(position) {
+          cachedPunchPosition = position;
+          cachedPunchPositionAt = Date.now();
+          submitPunch(punchAction, position.coords);
+        },
         function(error) {
           setButtonsDisabled(false);
           setStatus('定位失敗：請確認 LINE 已允許定位權限。\n' + error.message);
@@ -1675,6 +1698,28 @@ function escapeHtml(text) {
     }
 
     function submitPunch(punchAction, coords) {
+      if (!FAST_PUNCH_ENABLED) return submitPunchAppsScript(punchAction, coords);
+      const callbackName = 'awsPunchCallback_' + Date.now();
+      let completed = false;
+      window[callbackName] = function(result) {
+        completed = true;
+        delete window[callbackName];
+        if (result && result.fallback) return submitPunchAppsScript(punchAction, coords);
+        setStatus(result && result.success ? buildPunchSuccessMessage(result.message) : ((result && result.message) || '打卡失敗。'));
+        setButtonsDisabled(false);
+      };
+      const params = new URLSearchParams({callback:callbackName,action:punchAction,accessToken:accessToken,idToken:idToken,targetUserId:selectedPunchTargetUserId,latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy});
+      const script = document.createElement('script');
+      script.src = AWS_PUNCH_URL + '&' + params.toString();
+      script.onerror = function() {
+        if (completed) return;
+        delete window[callbackName];
+        submitPunchAppsScript(punchAction, coords);
+      };
+      document.body.appendChild(script);
+    }
+
+    function submitPunchAppsScript(punchAction, coords) {
       const callbackName = 'jsonpCallback_' + Date.now();
 
       window[callbackName] = function(result) {
