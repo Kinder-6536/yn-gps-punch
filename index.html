@@ -1460,30 +1460,10 @@ function queryEmployeeAbnormalByMonth() {
     return;
   }
 
-  const callbackName = 'jsonpCallback_' + Date.now();
-
-  window[callbackName] = function(result) {
-    setStatus(result.message);
-    delete window[callbackName];
-  };
-
-  const params = new URLSearchParams({
-    api: 'getEmployeeAbnormalByMonth',
-    callback: callbackName,
-    accessToken: accessToken,
-    idToken: idToken,
-    month: month
-  });
-
-  const script = document.createElement('script');
-  script.src = APPS_SCRIPT_URL + '?' + params.toString();
-  script.onerror = function() {
-    setStatus('查詢失敗：無法連線到 Apps Script。');
-  };
-
-  document.body.appendChild(script);
-
   setStatus('查詢中...');
+  callApi('getEmployeeAbnormalByMonth', {month: month}, function(result) {
+    setStatus((result && result.message) || '查詢失敗。');
+  });
 }
 
     
@@ -2186,6 +2166,7 @@ function callApi(apiName, extraParams, callback) {
     'getPendingMakeup',
     'getMyRequestRecords',
     'getRecentPunchRecords',
+    'getEmployeeAbnormalByMonth',
     'getPunchTargets',
     'getMyMonthlyHoursSummary',
     'getMonthlyHoursSummary',
