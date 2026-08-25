@@ -152,6 +152,8 @@
     let selectedPunchTargetUserId = '';
     let punchTargetsLoaded = false;
     let punchTargetsIsAdmin = false;
+    let punchPageReady = false;
+    let punchSubmitting = false;
     let overtimeApplicant = null;
     let overtimeEmployees = [];
     let overtimeEntrySequence = 0;
@@ -291,6 +293,7 @@ setStatus('LIFF 初始化完成，正在確認登入...');
         ready = true;
         loadEmployeeLanguagePreference();
         prefetchPunchLocation();
+        loadPunchTargets();
 
 const autoAction = getActionFromUrl();
 
@@ -428,8 +431,8 @@ function showPage(page) {
   '<div id="punchIdentityArea"></div>' +
   '<div>請選擇打卡動作</div>' +
   '<div class="grid">' +
-    '<button class="main-btn primary punch-btn" data-action="上班">上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
-    '<button class="main-btn punch-btn" data-action="下班">下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
+    '<button class="main-btn primary punch-btn" data-action="上班" disabled>上班<br><span>Vào ca</span><br><span>เข้างาน</span></button>' +
+    '<button class="main-btn punch-btn" data-action="下班" disabled>下班<br><span>Tan ca</span><br><span>เลิกงาน</span></button>' +
   '</div>' +
   '<div class="daily-quote">' +
     '<div class="daily-quote-title">今日小語</div>' +
@@ -476,18 +479,28 @@ function loadPunchTargets() {
 
   if (punchTargetsLoaded) {
     renderPunchIdentityArea();
+    punchPageReady = true;
+    setButtonsDisabled(false);
     return;
   }
 
   area.innerHTML = '<div class="placeholder">正在讀取打卡身分...</div>';
 
   callApi('getPunchTargets', {}, function(result) {
+    if (!result || !result.success) {
+      punchPageReady = false;
+      setButtonsDisabled(true);
+      setStatus((result && result.message) || '員工資料讀取失敗，請重新開啟頁面。');
+      return;
+    }
     punchTargetsLoaded = true;
     punchTargetsIsAdmin = !!result.isAdmin;
 
     if (!result.success || !result.isAdmin) {
       area.innerHTML = '';
       selectedPunchTargetUserId = '';
+      punchPageReady = true;
+      setButtonsDisabled(false);
       return;
     }
 
@@ -495,6 +508,8 @@ function loadPunchTargets() {
     selectedPunchTargetUserId = result.currentUserId || '';
 
     renderPunchIdentityArea();
+    punchPageReady = true;
+    setButtonsDisabled(false);
   });
 }
 
@@ -1906,6 +1921,9 @@ function escapeHtml(text) {
 
     function punch(punchAction) {
       if (!ready) return setStatus('LINE 尚未初始化完成，請稍候。');
+      if (!punchPageReady) return setStatus('正在讀取員工與打卡資料，請稍候。');
+      if (punchSubmitting) return;
+      punchSubmitting = true;
       setButtonsDisabled(true);
       if (cachedPunchPosition && Date.now() - cachedPunchPositionAt < 60000 && cachedPunchPosition.coords.accuracy <= 100) {
         setStatus('正在送出打卡...');
@@ -1922,6 +1940,7 @@ function escapeHtml(text) {
           submitPunch(punchAction, position.coords);
         },
         function(error) {
+          punchSubmitting = false;
           setButtonsDisabled(false);
           setStatus('定位失敗：請確認 LINE 已允許定位權限。\n' + error.message);
         },
@@ -1938,6 +1957,7 @@ function escapeHtml(text) {
         delete window[callbackName];
         if (result && result.fallback) return submitPunchAppsScript(punchAction, coords);
         setStatus(result && result.success ? buildPunchSuccessMessage(result.message) : ((result && result.message) || '打卡失敗。'));
+        punchSubmitting = false;
         setButtonsDisabled(false);
       };
       const params = new URLSearchParams({callback:callbackName,action:punchAction,accessToken:accessToken,idToken:idToken,targetUserId:selectedPunchTargetUserId,latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy});
@@ -1962,6 +1982,7 @@ function escapeHtml(text) {
   }
 
   setButtonsDisabled(false);
+  punchSubmitting = false;
   delete window[callbackName];
 };
 
@@ -1981,6 +2002,7 @@ function escapeHtml(text) {
       script.src = APPS_SCRIPT_URL + '?' + params.toString();
       script.onerror = function() {
         setStatus('送出失敗：無法連線到 Apps Script。');
+        punchSubmitting = false;
         setButtonsDisabled(false);
       };
       document.body.appendChild(script);
