@@ -1932,8 +1932,17 @@ function escapeHtml(text) {
       if (!FAST_PUNCH_ENABLED) return submitPunchAppsScript(punchAction, coords);
       const callbackName = 'awsPunchCallback_' + Date.now();
       let completed = false;
+      const timeoutId = setTimeout(function() {
+        if (completed) return;
+        completed = true;
+        delete window[callbackName];
+        punchSubmitting = false;
+        setButtonsDisabled(false);
+        setStatus('連線逾時，請先重新整理確認打卡紀錄；請勿連續重按。');
+      }, 15000);
       window[callbackName] = function(result) {
         completed = true;
+        clearTimeout(timeoutId);
         delete window[callbackName];
         if (result && result.fallback) return submitPunchAppsScript(punchAction, coords);
         setStatus(result && result.success ? buildPunchSuccessMessage(result.message) : ((result && result.message) || '打卡失敗。'));
@@ -1945,16 +1954,32 @@ function escapeHtml(text) {
       script.src = AWS_PUNCH_URL + '&' + params.toString();
       script.onerror = function() {
         if (completed) return;
+        completed = true;
+        clearTimeout(timeoutId);
         delete window[callbackName];
-        submitPunchAppsScript(punchAction, coords);
+        punchSubmitting = false;
+        setButtonsDisabled(false);
+        setStatus('送出連線失敗，請先重新整理確認打卡紀錄；請勿連續重按。');
       };
       document.body.appendChild(script);
     }
 
     function submitPunchAppsScript(punchAction, coords) {
       const callbackName = 'jsonpCallback_' + Date.now();
+      let completed = false;
+      const timeoutId = setTimeout(function() {
+        if (completed) return;
+        completed = true;
+        delete window[callbackName];
+        punchSubmitting = false;
+        setButtonsDisabled(false);
+        setStatus('打卡處理逾時，請先重新整理確認紀錄；請勿連續重按。');
+      }, 20000);
 
       window[callbackName] = function(result) {
+  if (completed) return;
+  completed = true;
+  clearTimeout(timeoutId);
   if (result.success) {
     setStatus(buildPunchSuccessMessage(result.message));
   } else {
@@ -1981,6 +2006,9 @@ function escapeHtml(text) {
       const script = document.createElement('script');
       script.src = APPS_SCRIPT_URL + '?' + params.toString();
       script.onerror = function() {
+        if (completed) return;
+        completed = true;
+        clearTimeout(timeoutId);
         setStatus('送出失敗：無法連線到 Apps Script。');
         punchSubmitting = false;
         setButtonsDisabled(false);
